@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   LAYER_SIZE = 30
 
   // the ratio between 1 value in an interval and 1 degree on the circle.
-  RATIO = 0
+  RATIO = 2 * Math.PI
 
   // center position 
   let x = canvas.width / 2
@@ -17,17 +17,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function drawNode(node) {
 
     // default color for first three layers. 
-    let color = "red"
+    let color = "green"
 
     // Gets a color based on the branch (from the third layer, and then the lightness is chosen by the depth)
-    if (node.branchNr)
-      color = get_color(node.branchNr, node.depth)
+    if (node.colorNr)
+      color = get_color(node.colorNr, node.depth)
 
     // the root node just draws a circle
     if (node.status == "root") {
-
-      // The ratio is the entire circles degrees devided between the roots interval
-      RATIO = (2 * Math.PI) / (node.interval[1] - node.interval[0])
 
       // draw a circle
       ctx.beginPath();
@@ -41,10 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return
     }
 
-    if (RATIO == 0) {
-      console.error("expected first node to be the root node")
-      return
-    }
 
     // Non-root nodes draws semi donuts
     ctx.beginPath()
@@ -60,9 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Returns a color based on the branch and depth
-  function get_color(branchNr, depth) {
+  function get_color(colorNr, depth) {
     const base_colors = ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#34495e", "#d35400", "#c0392b", "#7f8c8d"];
-    const color = base_colors[branchNr % 9];
+    const color = base_colors[colorNr % 9];
     const adjustedColor = lightenColor(color, depth);
     return adjustedColor;
   }
@@ -92,25 +85,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function readAndDrawNodesFromFile(filePath) {
     let isPaused = false;
     let index = 0;
+    let CHUNK_SIZE = 1000;
 
     const drawNextNode = () => {
       if (index < lines.length && !isPaused) {
-        const line = lines[index];
-        try {
-          const object = JSON.parse(line);
-          drawNode(object);
-          index++;
-
-          if (index % 100 === 0) {
-            setTimeout(drawNextNode, 0);
-          } else {
-            drawNextNode(); // Continue without delay
+        setTimeout(() => {
+        const chunk = lines.slice(index, index + CHUNK_SIZE)
+        chunk.forEach(line => {
+          try {
+            const object = JSON.parse(line);
+            drawNode(object);
+          } catch (error) {
+            console.error('Error parsing line:', line);
           }
-        } catch (error) {
-          console.error('Error parsing line:', line);
-          index++;
-          drawNextNode(); // Continue with the next node
-        }
+        })
+        index = index + CHUNK_SIZE;
+        drawNextNode(); 
+        }, 0) // just makes sure we handle a chunk at a time, otherwise the async form of JS will mess it up
       }
     };
 
