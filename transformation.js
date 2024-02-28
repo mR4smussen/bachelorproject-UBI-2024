@@ -8,6 +8,8 @@ class TreeNode {
     this.interval = null;
     this.depth = null;
     this.branchNr = null;
+    this.parent_interval = null;
+    this.isLeaf = false
   }
 
   assignIntervals(start = 0, depth = 1, branchNr = null) {
@@ -18,6 +20,7 @@ class TreeNode {
     if (this.children.length === 0) {
       // Leaf node, assign range [start, start+1]
       this.interval = [start, start + 1];
+      this.isLeaf = true
       return this.interval;
     } else {
       // Non-leaf node, assign range [min of child, max of child]
@@ -32,15 +35,16 @@ class TreeNode {
   }
 
   // defined the intervals as their fraction of the roots interval
-  fractionize_interval() {
+  fractionize_interval(parent_interval) {
     const current_start = this.interval[0];
     const current_end = this.interval[1];
     this.interval = [
       current_start / ROOT_INTERVAL_SIZE,
       current_end / ROOT_INTERVAL_SIZE,
     ];
+    this.parent_interval = parent_interval
     this.children.forEach((child) => {
-      child.fractionize_interval();
+      child.fractionize_interval(this.interval);
     });
   }
 }
@@ -122,7 +126,7 @@ extractLinksFromJsonFile(filePath)
       if (node.depth === 1) {
         data = `{"status":"root","interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr}}\n`;
       } else {
-        data = `{"interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr}}\n`;
+        data = `{"interval":[${node.interval[0]},${node.interval[1]}],"parent_interval":[${node.parent_interval[0]}, ${node.parent_interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr},"isLeaf": ${node.isLeaf}}\n`;
       }
 
       fs.appendFileSync(filename, data);

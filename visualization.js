@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Gets a color based on the branch (from the third layer, and then the lightness is chosen by the depth)
     if (node.colorNr)
-      color = get_color(node.colorNr, node.depth)
+      color = get_color(node.colorNr, node.depth, true)
 
     // the root node just draws a circle
     if (node.status == "root") {
@@ -53,10 +53,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Returns a color based on the branch and depth
-  function get_color(colorNr, depth) {
-    const base_colors = ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#34495e", "#d35400", "#c0392b", "#7f8c8d"];
+  function get_color(colorNr, depth, lighten) {
+    const base_colors = ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#34495e", "#d35400", "#c0392b", "#e16c18"];
     const color = base_colors[colorNr % 9];
-    const adjustedColor = lightenColor(color, depth);
+    if (!lighten)
+      return color
+    const adjustedColor = lightenColor(color, (depth < 40 ? depth : 40));
     return adjustedColor;
   }
 
@@ -82,10 +84,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return newHexColor;
   }
 
-  function readAndDrawNodesFromFile(filePath) {
+  function readAndDrawNodesFromFile_sunburst(filePath) {
     let isPaused = false;
     let index = 0;
-    let CHUNK_SIZE = 1000;
+    let CHUNK_SIZE = 100;
 
     const drawNextNode = () => {
       if (index < lines.length && !isPaused) {
@@ -128,7 +130,107 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
+  function approx_parent_interval(root_x, root_y, root_width, root_height, parent_interval) {
+    value = 1
+    value_gone = 0
+    x_frac = 1
+    y_frac = 1
+    current_x = root_x, current_y = root_y
+    current_width = root_width, current_height = root_height
+    parent_val = parent_interval[1] - parent_interval[0]
+    // as long the parent would fit inside a half of the current square...
+    while (value / 2 >= parent_val) {
+      value /= 2
+      // if width > height we split the box in half vertically 
+      if (current_width > current_height) {
+        x_frac /= 2
+        current_width /= 2
+        // if the parent is part of the right split, change the x
+        if (parent_interval[0] >= value_gone + value) { 
+          value_gone += value
+          current_x += current_width
+        }
+      }
+      // otherwise we split the box in half horizontally
+      else {
+        y_frac /= 2
+        current_height /= 2
+        // if the parent is part of the bottom split, change the y
+        if (parent_interval[0] >= value_gone + value) { 
+          value_gone += value
+          current_y += current_height
+        }
+      }
+    }
+    return {
+        "x": current_x,
+        "y": current_y,
+        "width": current_width,
+        "height": current_height
+      }
+  }
 
-  readAndDrawNodesFromFile('transformed_data.txt');
+  function draw_treemap(filePath) {
+
+    TREE_COLOR = 8
+
+    // upper left corner of the tree map
+    treemap_x = x - canvas.width / 4 
+    treemap_y = y - canvas.height / 4
+
+    ctx.fillStyle = get_color(TREE_COLOR, 0, true);
+    ctx.fillRect(treemap_x, treemap_y, x, y/2);
+
+
+    // Fetch and process the file
+    fetch(filePath)
+    .then(response => response.text())
+    .then(data => {
+      lines = data.split('\n');
+      for (const line of lines) {
+        node = JSON.parse(line);
+
+        // the root has no parent interval to work with
+        if (!node.parent_interval) {
+          continue
+        }
+        let parent_approx = approx_parent_interval(treemap_x, treemap_y, x, y/2, node.parent_interval)
+        
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(parent_approx.x + 0.05*node.depth, parent_approx.y + 0.05*node.depth, parent_approx.width - 0.1*node.depth, parent_approx.height - 0.1*node.depth);
+        
+
+        if (node.isLeaf) {
+          // slice
+          ctx.fillStyle = get_color(TREE_COLOR, node.depth, true);
+          ctx.lineWidth = 0.5;
+          parent_val = node.parent_interval[1] - node.parent_interval[0]
+          node_val = node.interval[1] - node.interval[0]
+          if (parent_approx.width > parent_approx.height) {
+            width_frac_of_parent = ((node_val / parent_val) * parent_approx.width)
+            x_rel_to_parent = (((node.interval[0] - node.parent_interval[0]) / parent_val) * parent_approx.width) + parent_approx.x
+            ctx.fillRect(x_rel_to_parent + 0.05*(node.depth+1), parent_approx.y + 0.05*(node.depth+1), width_frac_of_parent - 0.1*node.depth, parent_approx.height - 0.1*(node.depth+1));
+            ctx.strokeRect(x_rel_to_parent + 0.05*(node.depth+1), parent_approx.y + 0.05*(node.depth+1), width_frac_of_parent - 0.1*node.depth, parent_approx.height - 0.1*(node.depth+1));
+          } 
+          else { // dice
+            height_frac_of_parent = ((node_val / parent_val) * parent_approx.height)
+            y_rel_to_parent = (((node.interval[0] - node.parent_interval[0]) / parent_val) * parent_approx.height) + parent_approx.y
+            ctx.fillRect(parent_approx.x + 0.05*(node.depth+1), y_rel_to_parent + 0.05*(node.depth+1), parent_approx.width - 0.1*(node.depth+1), height_frac_of_parent - 0.1*(node.depth+1));
+            ctx.strokeRect(parent_approx.x + 0.05*(node.depth+1), y_rel_to_parent + 0.05*(node.depth+1), parent_approx.width - 0.1*(node.depth+1), height_frac_of_parent - 0.1*(node.depth+1));
+          }
+        }
+        
+        continue
+      }
+    })
+    .catch(error => {
+      console.error('Error reading file:', error);
+    });
+  }
+
+
+  draw_treemap('transformed_data.txt')
+  // readAndDrawNodesFromFile_sunburst('transformed_data.txt');
 
 });
