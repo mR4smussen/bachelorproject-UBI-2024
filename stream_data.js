@@ -1,4 +1,4 @@
-function stream_data(data, chunk_size, canvas, draw_callback) {
+function stream_data(data, chunk_size, canvas, handle_node_callback, handle_chunk_callback) {
     let index = 0;
     isPaused = false
 
@@ -9,7 +9,7 @@ function stream_data(data, chunk_size, canvas, draw_callback) {
                 chunk.forEach(node => {
                     try {
                         const object = JSON.parse(node);
-                        draw_callback(object, canvas);
+                        handle_node_callback(object, canvas);
                     } catch (error) {
                         console.error('Error parsing or drawing:', error);
                         return 
@@ -19,6 +19,8 @@ function stream_data(data, chunk_size, canvas, draw_callback) {
             next_chunk()
             }, 0)
         }
+        if (handle_chunk_callback)
+            setTimeout(() => handle_chunk_callback(), 0)
     }
 
     next_chunk()

@@ -26,7 +26,11 @@ class TreeNode {
       // Non-leaf node, assign range [min of child, max of child]
       let currentEnd = start;
       this.children.forEach((child, index) => {
-        const childBranchNr = Math.floor(Math.random() * 10); // this assigns a random color shared by siblings
+        let childBranchNr = branchNr
+        if (this.depth % 5 == 0 || branchNr == null) {
+          childBranchNr = Math.floor(Math.random() * 10);
+        }
+        // const childBranchNr = Math.floor(Math.random() * 10); // this assigns a random color shared by siblings
         currentEnd = child.assignIntervals(currentEnd, depth + 1,childBranchNr)[1];
       });
       this.interval = [start, currentEnd];

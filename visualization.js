@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // the amount of data the client receives at a time
   var CHUNK_SIZE = 100;
-  // pick a chart type: 0 = sunburst, 1 = tree map
+  // pick a chart type: 0 = sunburst, 1 = tree map parent approx, 2 = tree map multiple views
   const CHART_TYPE = 1
 
   fetch(DATA_FILE)
@@ -16,14 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
       lines = data.split('\n');
       switch (CHART_TYPE) {
         case 0:
-          console.log("test")
           stream_data(lines, CHUNK_SIZE, canvas, draw_sunburst)
           break
         case 1:
-          stream_data(lines, CHUNK_SIZE, canvas, draw_tree_map)
+          stream_data(lines, CHUNK_SIZE, canvas, draw_tree_map_parrent_approx)
+          break
+        case 2:
+          stream_data(lines, CHUNK_SIZE, canvas, add_tree_map_mult_view_node, check_tree_map_mult_view)
           break
         default:
-          console.log(`chart type can not be ${CHART_TYPE} - either pick be 0 (sunburst) or 1 (tree map)`)
+          console.log(`chart type can not be ${CHART_TYPE} - either pick 0 (sunburst) or 1 (tree map)`)
       }
     })
     .catch(error => {
