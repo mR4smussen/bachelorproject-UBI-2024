@@ -31,29 +31,44 @@ total_node_amount = 0;
 total_layers_approx = 0
 total_nodes_in_layers_approx = []
 
+// [width, height] for the canvas's
+CANVAS_SIZE = [4096, 2160]
+// CANVAS_SIZE = [6500, 6000]
+
+TREE_COLOR = "#34495e"
+
+BACKGROUND_DRAW = false
+
+// modifications
+COLOR_LEAFS = false
+STACK_VIEWS = false
+
 // this just adds a node to one of the queues
 function add_tree_map_mult_view_node(node, canvas) {
+    if (node.interval[1] - node.interval[0] >= 0.005 || true) {
+        if (views_drawn % 2 == 0) {
+            even_queue.push(node)
+        } else {
+            odd_queue.push(node)
+        }
 
-    if (views_drawn % 2 == 0) {
-        even_queue.push(node)
-    } else {
-        odd_queue.push(node)
+        if (nodes_in_layers_ctr[node.depth]) {
+            nodes_in_layers_ctr[node.depth] += 1;
+            interval_of_layers[node.depth] += node.interval[1] - node.interval[0];
+        } else {
+            layers_seen.add(node.depth)
+            nodes_in_layers_ctr[node.depth] = 1;
+            interval_of_layers[node.depth] = node.interval[1] - node.interval[0];
+        }
+        total_node_amount += 1
     }
-
-    if (nodes_in_layers_ctr[node.depth]) {
-        nodes_in_layers_ctr[node.depth] += 1;
-        interval_of_layers[node.depth] += node.interval[1] - node.interval[0];
-    } else {
-        layers_seen.add(node.depth)
-        nodes_in_layers_ctr[node.depth] = 1;
-        interval_of_layers[node.depth] = node.interval[1] - node.interval[0];
-    }
-    total_node_amount += 1
 }
 
 // Here we approximate the size of the layers and the amount of layers to get an idea of how much data we have in total
 // and if we are more than (views_drawn + 1)*p% through the data we start visualizing the next view
 function check_tree_map_mult_view() {
+    // console.log("even:", even_queue.length)
+    // console.log("odd:", odd_queue.length)
 
     // finds the highest layer number (used for the german tank problem)
     highest_layer_number = 0
@@ -68,7 +83,7 @@ function check_tree_map_mult_view() {
 
 
     total_nodes_in_layers_approx[1] = 1 // we expect a unique root
-    for (i = 2; i <= highest_layer_number; i++) {
+    for (i = 2; i <= total_layers_approx; i++) {
         if (nodes_in_layers_ctr[i]) {
             child_parent_ratio = nodes_in_layers_ctr[i] / (nodes_in_layers_ctr[i-1] ? nodes_in_layers_ctr[i-1] : 1) // this could be better than just "1" as default
             total_nodes_in_layers_approx[i] = Math.ceil(child_parent_ratio * total_nodes_in_layers_approx[i-1])
@@ -94,34 +109,158 @@ function check_tree_map_mult_view() {
     if (sum_of_10p)
         mean_of_10p = sum_of_10p / ten_percentages.length
 
-    if (total_node_amount > next_10p) {
-        ten_percentages.push(next_10p)
+    // if (total_node_amount > next_10p) {
+    // if (total_node_amount > (36000*(0.1*(views_drawn + 1)))) {
+    if (views_drawn % 2 == 0 ? even_queue.length : odd_queue.length > 3600) {
         views_drawn++;
-        last_drawn_at = total_node_amount
-        console.log("draw view:", views_drawn, "after", total_node_amount, "nodes")
-    }  else if (total_node_amount > last_drawn_at + mean_of_10p && mean_of_10p > 0) {
+        setTimeout(() => {
+            ten_percentages.push(next_10p)
+            last_drawn_at = total_node_amount
+            if (views_drawn-1 % 2 == 0 && even_queue.length > 3600) {
+                draw_next_view(even_queue, total_nodes_in_layers_approx)
+                even_queue = []
+            } else if(odd_queue.length > 3600) {
+                draw_next_view(odd_queue, total_nodes_in_layers_approx)
+                odd_queue = []
+            }
+        }, 0)
+    // }  else if (total_node_amount > last_drawn_at + mean_of_10p && mean_of_10p > 0) {
+    }  else if (false) {
         views_drawn++;
         last_drawn_at = total_node_amount
         ten_percentages.push(total_node_amount)
-        console.log("draw view:", views_drawn, "after", total_node_amount, "nodes")
+        setTimeout(() => {
+            if (views_drawn-1 % 2 == 0) {
+                draw_next_view(even_queue, total_nodes_in_layers_approx)
+                even_queue = []
+            } else {
+                draw_next_view(odd_queue, total_nodes_in_layers_approx)
+                odd_queue = []
+            }
+            
+        }, 0)
+    }
+}
+
+function draw_next_view(nodes, layer_size_approximations) {
+
+    const canvas = document.getElementById("sunburstCanvas");
+    if (canvas)
+        canvas.parentNode.removeChild(canvas)
+    // Create a div element
+    const view_div = document.createElement('div');
+    view_div.classList.add('canvas-container');
+
+    // Create a canvas element
+    const view_canvas = document.createElement('canvas');
+    view_canvas.width = CANVAS_SIZE[0];
+    view_canvas.height = CANVAS_SIZE[1];
+
+    // Append the canvas to the div
+    view_div.appendChild(view_canvas);
+
+    if (STACK_VIEWS) {
+        view_div.style.position = 'absolute';
+        view_div.style.left = 0 + 'px';
+        view_div.style.top = 0 + 'px';
+    }
+
+    // Append the div to the body of the page
+    document.body.appendChild(view_div);
+
+    const ctx = view_canvas.getContext("2d");
+
+    const view_width = view_canvas.width
+    const view_height = view_canvas.height
+
+    treemap_x = view_width - view_canvas.width
+    treemap_y = view_height - view_canvas.height
+
+    if (!BACKGROUND_DRAW) {
+        ctx.fillStyle = TREE_COLOR;
+        ctx.fillRect(treemap_x, treemap_y, view_width, view_height);
+        if (STACK_VIEWS)
+            BACKGROUND_DRAW = true
     }
 
 
-    // const x = canvas.width / 2
-    // const y = canvas.height / 2
-    // const ctx = canvas.getContext("2d");
+    nodes.forEach((node) => {
+        current_x = treemap_x
+        current_y = treemap_y
+        current_width = view_width
+        current_height = view_height
+        current_layer_areas = 1
+        current_interval = [0,1]
 
-    // TREE_COLOR = 6
+        value = 1        
+        value_x = 1
+        value_y = 1
+        node_val = node.interval[1] - node.interval[0]
 
-    // // upper left corner of the tree map
-    // treemap_x = x - canvas.width / 4 
-    // treemap_y = y - canvas.height / 4
+        for (i = 2; i <= node.depth; i++) {
+            current_val = current_interval[1] - current_interval[0]
+            if (!current_val)
+                break // makes sure we don't divide by 0 when the value becomes too small
 
-    // // draw background
-    // if (!BACKGROUND_DRAWN) {
-    //     ctx.fillStyle = get_color(TREE_COLOR, 0, true);
-    //     ctx.fillRect(treemap_x, treemap_y, x, y/2);
-    //     BACKGROUND_DRAWN = true
-    // }
+            current_layer_areas = Math.ceil(layer_size_approximations[i] / current_layer_areas) + 1
 
+            if (current_width > current_height) {
+                node_frac_of_area = ((node.interval[0] - current_interval[0]) / current_val)
+
+                splits_frac_of_area = (value_x / current_layer_areas) / value_x
+
+                current_width /= current_layer_areas
+                
+                split_nr = Math.floor(node_frac_of_area / splits_frac_of_area)
+                value /= current_layer_areas
+                current_interval[0] += value * split_nr
+                current_interval[1] -= (current_layer_areas - 1 - split_nr) * value
+                value_x /= current_layer_areas
+
+                current_x += split_nr * current_width
+            }
+            else {
+                node_frac_of_area = ((node.interval[0] - current_interval[0]) / current_val)
+                splits_frac_of_area = (value_y / current_layer_areas) / value_y
+
+                current_height /= current_layer_areas
+                
+                split_nr = Math.floor(node_frac_of_area / splits_frac_of_area)
+
+                value /= current_layer_areas
+                current_interval[0] += value * split_nr
+                current_interval[1] -= (current_layer_areas - 1 - split_nr) * value
+                value_y /= current_layer_areas
+
+                current_y += split_nr * current_height
+            }
+        }
+
+        ctx.strokeStyle = get_color(node.colorNr, node.depth, true);
+        ctx.lineWidth = 5;
+
+        ctx.strokeRect(
+            current_x,              // x pos
+            current_y,              // y pos
+            current_width,          // width
+            current_height);        // height    
+
+        if (node.isLeaf && COLOR_LEAFS) {
+            ctx.fillStyle = get_color(node.colorNr, node.depth, true);
+            ctx.fillRect(
+                current_x,              // x pos
+                current_y,              // y pos
+                current_width,          // width
+                current_height);        // height   
+
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.strokeRect( 
+                current_x,              // x pos
+                current_y,              // y pos
+                current_width,          // width
+                current_height);        // height  
+        }
+             
+    })
 }

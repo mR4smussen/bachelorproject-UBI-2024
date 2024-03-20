@@ -1,6 +1,6 @@
 BACKGROUND_DRAWN = false
 
-function draw_tree_map_parrent_approx(node, canvas) {
+function draw_tree_map_parrent_approx(node, canvas, draw_background = false) {
 
     const x = canvas.width / 2
     const y = canvas.height / 2
@@ -14,7 +14,7 @@ function draw_tree_map_parrent_approx(node, canvas) {
     treemap_y = y - canvas.height / 4
 
     // draw background
-    if (!BACKGROUND_DRAWN) {
+    if (!BACKGROUND_DRAWN || draw_background) {
         ctx.fillStyle = get_color(TREE_COLOR, 0, true);
         ctx.fillRect(treemap_x, treemap_y, x, y/2);
         BACKGROUND_DRAWN = true
@@ -151,10 +151,14 @@ function approx_parent_interval(root_x, root_y, root_width, root_height, parent_
     // node_val = node.interval[1] - node.interval[0]
     // if (current_width > current_height) {
     //     width_frac_of_box = ((node_val / value) * current_width)
-    //     current_x = current_x + (node.interval[0] * value * width_frac_of_box)
+    //     current_width = width_frac_of_box
+    //     current_x = current_x + node.interval[0] - ((current_x - root_x) * value)
+    //     // current_x = current_x + (node.interval[0] * value * width_frac_of_box)
     // } else {
     //     height_frac_of_box = ((node_val / value) * current_height)
-    //     current_y = current_y + (node.interval[0] *  value * height_frac_of_box)
+    //     current_height = height_frac_of_box
+    //     current_y = current_y + node.interval[0] - ((current_y - root_y) * value)
+    //     // current_y = current_y + (node.interval[0] *  value * height_frac_of_box)
     // }
 
     return {

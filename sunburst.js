@@ -2,7 +2,7 @@ function draw_sunburst(node, canvas) {
 
     const ctx = canvas.getContext("2d");
 
-    const LAYER_SIZE = 30
+    const LAYER_SIZE = 20
 
     // the ratio between 1 value in an interval and 1 degree on the circle.
     const RATIO = 2 * Math.PI

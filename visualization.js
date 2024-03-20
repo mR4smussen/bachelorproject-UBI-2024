@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // the amount of data the client receives at a time
   var CHUNK_SIZE = 100;
   // pick a chart type: 0 = sunburst, 1 = tree map parent approx, 2 = tree map multiple views
-  const CHART_TYPE = 1
+  const CHART_TYPE = 2
 
   fetch(DATA_FILE)
     .then(response => response.text())
