@@ -41,7 +41,7 @@ BACKGROUND_DRAW = false
 
 // modifications
 COLOR_LEAFS = false
-STACK_VIEWS = false
+STACK_VIEWS = true
 
 // this just adds a node to one of the queues
 function add_tree_map_mult_view_node(node, canvas) {
@@ -67,8 +67,6 @@ function add_tree_map_mult_view_node(node, canvas) {
 // Here we approximate the size of the layers and the amount of layers to get an idea of how much data we have in total
 // and if we are more than (views_drawn + 1)*p% through the data we start visualizing the next view
 function check_tree_map_mult_view() {
-    // console.log("even:", even_queue.length)
-    // console.log("odd:", odd_queue.length)
 
     // finds the highest layer number (used for the german tank problem)
     highest_layer_number = 0
