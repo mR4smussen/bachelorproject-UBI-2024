@@ -1,35 +1,35 @@
 
 // array of all the canvases. views[i] is the canvas for layer i
-views = []
+let views = []
 // array of all the canvases divs. divs[i] is the div of the canvas for layer i
-view_divs = []
+let view_divs = []
 
 // global var, so we only draw the background once if we stack the views
-ICICLE_BACKGROUND_DRAW = true
+let ICICLE_BACKGROUND_DRAW = true
 
 // flag to draw the layers borders or not
-DRAW_LAYER_BORDERS = false
+const DRAW_LAYER_BORDERS = false
 
 // flag to either draw the plot top-down or bottom up
-TOP_DOWN = false
+const TOP_DOWN = true
 
 // flag to stack the different views on top of each other
-ICICLE_STACK_VIEWS = false
-DRAW_ALL_BACKGROUNDS = false
+const ICICLE_STACK_VIEWS = false
+const DRAW_ALL_BACKGROUNDS = false
 
 // flag to fill in nodes or not
-FILL_NODES = true
+const FILL_NODES = true
 
 // Layer of Detail - variable for how many layers do we want to visualize
-LoD = 150
+const LoD = 150
 
 // the size of each view
-ICICLE_CANVAS_SIZE = [4000, 50]
+const ICICLE_CANVAS_SIZE = [4000, 50]
 
 // global flag to indicate when the views are being animated
-ANIMATING = false
-start_view = 1
-listener_added = false
+let ANIMATING = false
+const start_view = 1
+let listener_added = false
 
 function add_icicle(node, canvas) {
     if (!listener_added) {
@@ -61,6 +61,7 @@ function add_icicle(node, canvas) {
         canvas = document.createElement('canvas');
         canvas.width = ICICLE_CANVAS_SIZE[0];
         canvas.height = ICICLE_CANVAS_SIZE[1];
+        canvas.margin = "0px"
 
         if (!DRAW_LAYER_BORDERS)
             canvas.style.border = "None"

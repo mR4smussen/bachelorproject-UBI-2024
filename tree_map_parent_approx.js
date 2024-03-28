@@ -7,11 +7,11 @@ function draw_tree_map_parrent_approx(node, canvas, draw_background = false) {
 
     const ctx = canvas.getContext("2d");
 
-    TREE_COLOR = "#34495e"
+    const TREE_COLOR = "#34495e"
 
     // upper left corner of the tree map
-    treemap_x = x - canvas.width / 4 
-    treemap_y = y - canvas.height / 4
+    const treemap_x = x - canvas.width / 4 
+    const treemap_y = y - canvas.height / 4
 
     // draw background
     if (!BACKGROUND_DRAWN || draw_background) {

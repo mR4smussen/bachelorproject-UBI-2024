@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
           stream_data(lines, CHUNK_SIZE, canvas, add_tree_map_mult_view_node, check_tree_map_mult_view)
           break
         case 3:
+          if (canvas)
+            canvas.parentNode.removeChild(canvas)
           stream_data(lines, CHUNK_SIZE, canvas, add_icicle)
           break
         case 4:
