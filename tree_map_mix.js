@@ -4,17 +4,17 @@
 
 
 // [width, height] for the canvas's
-let CANVAS_SIZE = [1400, 1400]
-// CANVAS_SIZE = [4096, 2160] 
-// CANVAS_SIZE = [6500, 6000]
+const CANVAS_SIZE_mixed = [1400, 1400]
+// CANVAS_SIZE_mixed = [4096, 2160] 
+// CANVAS_SIZE_mixed = [6500, 6000]
 
-let TREE_COLOR = "#34495e"
+let TREE_COLOR_mixed = "#34495e"
 
 // global var makes sure we only draw the background once
-let BACKGROUND_DRAW = false
+let BACKGROUND_DRAW_mixed = false
 
 // This adds an outline to leafs and fills them - Not pretty 
-let COLOR_LEAFS = false
+let COLOR_LEAFS_mixed = false
 
 // LoD - just for testing
 let LAYERS_TO_SHOW = 120
@@ -26,6 +26,9 @@ let total_nodes = 35956
 // Canvas properties
 let ctx, view_width, view_height, treemap_x, treemap_y
 
+// how to respect sizes (round up or down)
+const ROUND_SIZE_UP = false
+
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
     
@@ -35,9 +38,9 @@ function add_tree_map_node_mixed(node, canvas) {
     }
 
     // Set the canvas properties once
-    if (!BACKGROUND_DRAW) {
-        canvas.width = CANVAS_SIZE[0];
-        canvas.height = CANVAS_SIZE[1];
+    if (!BACKGROUND_DRAW_mixed) {
+        canvas.width = CANVAS_SIZE_mixed[0];
+        canvas.height = CANVAS_SIZE_mixed[1];
         ctx = canvas.getContext("2d")
         view_width = canvas.width
         view_height = canvas.height
@@ -46,10 +49,10 @@ function add_tree_map_node_mixed(node, canvas) {
     }
 
     // draw the background
-    if (!BACKGROUND_DRAW) {
-        ctx.fillStyle = TREE_COLOR;
+    if (!BACKGROUND_DRAW_mixed) {
+        ctx.fillStyle = TREE_COLOR_mixed;
         ctx.fillRect(treemap_x, treemap_y, view_width, view_height);
-        BACKGROUND_DRAW = true
+        BACKGROUND_DRAW_mixed = true
     }
 
     // defines the current container - the final container is drawn
@@ -76,7 +79,7 @@ function add_tree_map_node_mixed(node, canvas) {
         let current_val = current_interval[1] - current_interval[0]
 
         // break to respect the size/value of the node
-        if (current_val < node_val)
+        if (current_val < node_val && ROUND_SIZE_UP)
             break 
 
         // Computes how many areas this layer consists of - ratio between areas we need and areas in the previous layer
@@ -125,6 +128,9 @@ function add_tree_map_node_mixed(node, canvas) {
             // Move the y-border to the y-border of the new container
             current_y += area_nr * current_height
         }
+        // break to respect the size/value of the node
+        if (current_val < node_val && !ROUND_SIZE_UP)
+            break 
     }
 
     // Make a border for the current node/container
@@ -137,7 +143,7 @@ function add_tree_map_node_mixed(node, canvas) {
         current_height);        // height    
 
     // If chosen - we draw a black outline for each leaf and fill them with their colors
-    if (node.isLeaf && COLOR_LEAFS) {
+    if (node.isLeaf && COLOR_LEAFS_mixed) {
         ctx.fillStyle = get_color(node.colorNr, node.depth, true);
         ctx.fillRect(
             current_x,              // x pos

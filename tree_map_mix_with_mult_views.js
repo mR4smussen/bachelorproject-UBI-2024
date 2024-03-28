@@ -5,57 +5,57 @@
 // kan vi placerer alle i samme view (uden overlap?)
 
 // keeps track of how many views has been drawn
-views_drawn = 0
+let views_drawn = 0
 
 // used to determine when to draw a new view
-last_drawn_at = 0
-ten_percentages = []
+let last_drawn_at = 0
+let ten_percentages = []
 
 // the percentage of all nodes we want in each view
-p = 0.1
+let p = 0.1
 
 // queues used for odd and even view numbers
 // so the first p% of the nodes go in even_queue (because they are part of the view number 0),
 // and the next p% go in the odd queue, and so on... 
-even_queue = []
-odd_queue = []
+let even_queue = []
+let odd_queue = []
 
 // keeps the amount of nodes we have seen in a layer (index "i" is layer "i")
-nodes_in_layers_ctr = []
+let nodes_in_layers_ctr = []
 // keeps how much of the interval we have seen of a specific layer
-interval_of_layers = []
+let interval_of_layers = []
 
 // keeps the amount of different layers we have seen 
 // kept in a set, so we can just add each layer we see and have no duplicates
-layers_seen = new Set();
+let layers_seen = new Set();
 
 // keeps track of how many nodes we have seen in total (used for the german tank problem)
-total_node_amount = 0;
+let total_node_amount = 0;
 
 // estimates for how many layers the data has and how many nodes for each layers
 // the different visualizations are based on these estimates
-total_layers_approx = 0
-total_nodes_in_layers_approx = []
+let total_layers_approx = 0
+let total_nodes_in_layers_approx = []
 
 // [width, height] for the canvas's
-CANVAS_SIZE = [4096, 2160]
-// CANVAS_SIZE = [6500, 6000]
+const CANVAS_SIZE = [4096, 2160]
+// const CANVAS_SIZE = [6500, 6000]
 
-TREE_COLOR = "#34495e"
+const TREE_COLOR = "#34495e"
 
-BACKGROUND_DRAW = false
+let BACKGROUND_DRAW = false
 
 // modifications
-COLOR_LEAFS = false
-STACK_VIEWS = false
+const COLOR_LEAFS = false
+const STACK_VIEWS = false
 
 // Just for testing
-Ten_Percent_of_nodes = 1500
-LAYERS_TO_SHOW = 20
+const Ten_Percent_of_nodes = 1500
+const LAYERS_TO_SHOW = 20
 
 // This should be part of the transformation if it works
-nodes_in_layers = [2, 4, 38, 336, 261, 341, 150, 64, 90, 174, 325, 223, 134, 204, 233, 463, 449, 753, 967, 524, 553, 617, 585, 482, 877, 1513, 1464, 569, 526, 374, 656, 504, 594, 2099, 1128, 1662, 929, 1052, 994, 744, 718, 525, 825, 1052, 1568, 1098, 498, 415, 490, 228, 269, 287, 390, 226, 278, 155, 164, 56, 41, 37, 14, 23, 49, 49, 82, 80, 97, 140, 230, 143, 173, 125, 149, 190, 131, 52, 47, 41, 33, 30, 20, 13, 13, 11, 11, 18, 32, 44, 57, 70, 74, 73, 112, 47, 44, 54, 35, 39, 30, 21, 25, 23, 22, 4, 2, 2, 5, 4, 4, 9, 17, 19, 28, 30, 30, 30, 16, 8, 2, 4];
-total_nodes = 35956
+let nodes_in_layers = [2, 4, 38, 336, 261, 341, 150, 64, 90, 174, 325, 223, 134, 204, 233, 463, 449, 753, 967, 524, 553, 617, 585, 482, 877, 1513, 1464, 569, 526, 374, 656, 504, 594, 2099, 1128, 1662, 929, 1052, 994, 744, 718, 525, 825, 1052, 1568, 1098, 498, 415, 490, 228, 269, 287, 390, 226, 278, 155, 164, 56, 41, 37, 14, 23, 49, 49, 82, 80, 97, 140, 230, 143, 173, 125, 149, 190, 131, 52, 47, 41, 33, 30, 20, 13, 13, 11, 11, 18, 32, 44, 57, 70, 74, 73, 112, 47, 44, 54, 35, 39, 30, 21, 25, 23, 22, 4, 2, 2, 5, 4, 4, 9, 17, 19, 28, 30, 30, 30, 16, 8, 2, 4];
+let total_nodes = 35956
 
 // this just adds a node to one of the queues
 function add_tree_map_node_mixed_with_mult_views(node, canvas) {
