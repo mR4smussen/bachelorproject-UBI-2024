@@ -27,7 +27,7 @@ let total_nodes = 35956
 let ctx, view_width, view_height, treemap_x, treemap_y
 
 // how to respect sizes (round up or down)
-const ROUND_SIZE_UP = false
+const ROUND_SIZE_UP = true
 
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
@@ -65,10 +65,8 @@ function add_tree_map_node_mixed(node, canvas) {
     let current_layer_areas = 1
     let current_interval = [0,1]
 
-    // Defines the fraction left of different parts
-    let value = 1 // volume of current container compared to the root container
-    let value_x = 1 // width of current container compared to the root container
-    let value_y = 1 // height of current container compared to the root container
+    // volume of current container compared to the root container
+    let value = 1
 
     // The desired volume of the final container compared to the root container
     let node_val = node.interval[1] - node.interval[0] 
@@ -85,22 +83,21 @@ function add_tree_map_node_mixed(node, canvas) {
         // Computes how many areas this layer consists of - ratio between areas we need and areas in the previous layer
         current_layer_areas = Math.ceil(nodes_in_layers[i] / current_layer_areas) + 1
 
+        // Computes the interval fraction of a single area for this layer
+        let splits_frac_of_area = 1 / current_layer_areas
+
         // Computes the beginning of the interval of the current node in relation to the interval of the current container (to respect borders)
-        normalized_interval_start = ((node.interval[0] - current_interval[0]) / current_val)
+        let normalized_interval_start = ((node.interval[0] - current_interval[0]) / current_val)
 
         // Either slice or dice the current container
         // if (i % 2 == 0) { // correct slice n dice - not as pretty as the fair cut
         if (current_width > current_height) { // fair cut
-            // Computes the interval size of a single area for this layer
-            splits_frac_of_area = (value_x / current_layer_areas) / value_x
-
             // Divide the container width and value with the amount of new areas we make for this layer
             current_width /= current_layer_areas
             value /= current_layer_areas
-            value_x /= current_layer_areas
 
             // Computes which area of the current layer the current node should be within
-            area_nr = Math.floor(normalized_interval_start / splits_frac_of_area)
+            let area_nr = Math.floor(normalized_interval_start / splits_frac_of_area)
 
             // Computes the new start and finish of the current containers interval
             current_interval[0] += value * area_nr
@@ -110,13 +107,9 @@ function add_tree_map_node_mixed(node, canvas) {
             current_x += area_nr * current_width
         }
         else {
-            // Computes the interval size of a single area for this layer
-            splits_frac_of_area = (value_y / current_layer_areas) / value_y
-
             // Divide the container height and value with the amount of new areas we make for this layer
             current_height /= current_layer_areas
             value /= current_layer_areas
-            value_y /= current_layer_areas
 
             // Computes which area of the current layer the current node should be within
             area_nr = Math.floor(normalized_interval_start / splits_frac_of_area)
