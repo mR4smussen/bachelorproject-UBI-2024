@@ -11,6 +11,7 @@ function stream_data(data, chunk_size, canvas, handle_node_callback, handle_chun
                         const object = JSON.parse(node);
                         handle_node_callback(object, canvas);
                     } catch (error) {
+                        console.log(node)
                         console.error('Error parsing or drawing:', error);
                         return 
                     }

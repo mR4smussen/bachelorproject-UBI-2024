@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("sunburstCanvas");
   const ctx = canvas.getContext("2d");
 
-  const DATA_FILE = "transformed_data copy.txt"
+  const DATA_FILE = "transformed_data.txt"
 
   // the amount of data the client receives at a time
   var CHUNK_SIZE = 100;

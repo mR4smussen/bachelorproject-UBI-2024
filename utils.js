@@ -8,7 +8,7 @@ function get_color(colorNr, depth, lighten) {
 }
 
 function lightenColor(hexColor, lightness) {
-    scale = 2 // adjust how much the colors change with depth
+    scale = 1 // adjust how much the colors change with depth
     // Remove the '#' character if present
     hexColor = hexColor.replace(/^#/, '');
 
