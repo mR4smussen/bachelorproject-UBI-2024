@@ -2,39 +2,40 @@ const fs = require("fs");
 
 let ROOT_INTERVAL_SIZE = 0;
 
+const TOTAL_LAYERS = 120; // maybe this should not be hardcoded...
+let nodes_in_layers = Array(TOTAL_LAYERS + 1).fill(0)
+
 class TreeNode {
   constructor() {
     this.children = [];
     this.interval = null;
     this.depth = null;
     this.branchNr = null;
-    this.parent_interval = null;
     this.isLeaf = false
   }
 
   assignIntervals(start = 0, depth = 1, branchNr = null) {
+    nodes_in_layers[depth] += 1
     this.depth = depth;
-
     this.branchNr = branchNr;
-
+      
     if (this.children.length === 0) {
-      // Leaf node, assign range [start, start+1]
       this.interval = [start, start + 1];
       this.isLeaf = true
-      return this.interval;
+      return start+1;
     } else {
       // Non-leaf node, assign range [min of child, max of child]
       let currentEnd = start;
-      this.children.forEach((child, index) => {
+      this.children.forEach((child) => {
         let childBranchNr = branchNr
         if (this.depth % 5 == 0 || branchNr == null) {
           childBranchNr = Math.floor(Math.random() * 10);
         }
         // const childBranchNr = Math.floor(Math.random() * 10); // this assigns a random color shared by siblings
-        currentEnd = child.assignIntervals(currentEnd, depth + 1,childBranchNr)[1];
+        currentEnd = child.assignIntervals(currentEnd, depth + 1,childBranchNr);
       });
       this.interval = [start, currentEnd];
-      return [start, currentEnd];
+      return currentEnd;
     }
   }
 
@@ -126,12 +127,8 @@ extractLinksFromJsonFile(filePath)
 
     // Printing the nodes to a file
     function printInfoToFile(node, filename) {
-      data = "";
-      if (node.depth === 1) {
-        data = `{"status":"root","interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr}}\n`;
-      } else {
-        data = `{"interval":[${node.interval[0]},${node.interval[1]}],"parent_interval":[${node.parent_interval[0]}, ${node.parent_interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr},"isLeaf": ${node.isLeaf}}\n`;
-      }
+      random_layer = Math.floor(Math.random() * TOTAL_LAYERS) + 1;
+      data = `{"interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"nodes_in_own_layer":${nodes_in_layers[node.depth]},"random_layer":${random_layer},"nodes_in_random_layer":${nodes_in_layers[random_layer]},"total_layers":${TOTAL_LAYERS},"colorNr":${node.branchNr},"isLeaf": ${node.isLeaf}}\n`
 
       fs.appendFileSync(filename, data);
 

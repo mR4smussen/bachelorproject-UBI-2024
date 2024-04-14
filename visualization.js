@@ -19,7 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
           stream_data(lines, CHUNK_SIZE, canvas, draw_sunburst)
           break
         case 1:
-          stream_data(lines, CHUNK_SIZE, canvas, draw_tree_map_parrent_approx)
+          console.log("parrent approx does not work in this version, since the transformation no longer includes the parent intervals")
+          // stream_data(lines, CHUNK_SIZE, canvas, draw_tree_map_parrent_approx)
           break
         case 2:
           stream_data(lines, CHUNK_SIZE, canvas, add_tree_map_mult_view_node, check_tree_map_mult_view)

@@ -22,7 +22,7 @@ function draw_tree_map_parrent_approx(node, canvas, draw_background = false) {
     
 
     // the root has no parent interval to work with
-    if (!node.parent_interval) {
+    if (node.depth == 1) {
         return 
     }
     let parent_approx = approx_parent_interval(treemap_x, treemap_y, x, y/2, node.parent_interval, node)

@@ -16,20 +16,6 @@ function draw_sunburst(node, canvas) {
     if (node.colorNr)
         color = get_color(node.colorNr, node.depth, true)
 
-    // the root node just draws a black circle
-    if (node.status == "root") {
-        ctx.beginPath();
-        ctx.arc(x, y, LAYER_SIZE, 0, 2 * Math.PI);
-        ctx.fillStyle = "black";
-        ctx.fill();
-        ctx.lineWidth = 0.01; // outline width
-        ctx.strokeStyle = "#000"; // outline color
-        ctx.stroke();
-
-        return
-    }
-
-
     // Non-root nodes draws semi donuts
     ctx.beginPath()
     ctx.fillStyle = color;

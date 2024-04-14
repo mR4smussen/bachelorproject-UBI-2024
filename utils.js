@@ -27,3 +27,25 @@ function lightenColor(hexColor, lightness) {
 
     return newHexColor;
 }
+
+// Factorial and combination (choose) are used for the coupon problem
+function factorial(n) {
+  if (n === 0 || n === 1) {
+      return 1;
+  } else {
+      return n * factorial(n - 1);
+  }
+}
+
+function combination(n, k) {
+  return factorial(n) / (factorial(k) * factorial(n - k));    
+}
+
+// outputs probability of seeing all r layers after we see n nodes
+function coupon_problem(r, n) {
+  let sum = 0
+  for (j = 0; j <= r; j++) {
+      sum += (-1)**j * combination(r, j) * (1-(j / r))**n
+  }
+  return sum
+}
