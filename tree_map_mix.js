@@ -5,6 +5,7 @@
 
 // [width, height] for the canvas's
 const CANVAS_SIZE_mixed = [1400, 1400]
+// const CANVAS_SIZE_mixed = [2000, 1000]
 // CANVAS_SIZE_mixed = [4096, 2160] 
 // CANVAS_SIZE_mixed = [6500, 6000]
 
@@ -19,20 +20,41 @@ let COLOR_LEAFS_mixed = false
 // LoD - just for testing
 let LAYERS_TO_SHOW = 120
 
-// This should be part of the transformation somehow
-let nodes_in_layers = [2, 4, 38, 336, 261, 341, 150, 64, 90, 174, 325, 223, 134, 204, 233, 463, 449, 753, 967, 524, 553, 617, 585, 482, 877, 1513, 1464, 569, 526, 374, 656, 504, 594, 2099, 1128, 1662, 929, 1052, 994, 744, 718, 525, 825, 1052, 1568, 1098, 498, 415, 490, 228, 269, 287, 390, 226, 278, 155, 164, 56, 41, 37, 14, 23, 49, 49, 82, 80, 97, 140, 230, 143, 173, 125, 149, 190, 131, 52, 47, 41, 33, 30, 20, 13, 13, 11, 11, 18, 32, 44, 57, 70, 74, 73, 112, 47, 44, 54, 35, 39, 30, 21, 25, 23, 22, 4, 2, 2, 5, 4, 4, 9, 17, 19, 28, 30, 30, 30, 16, 8, 2, 4];
-let total_nodes = 35956
-
 // Canvas properties
 let ctx, view_width, view_height, treemap_x, treemap_y
 
 // how to respect sizes (round up or down)
 const ROUND_SIZE_UP = true
 
+// used for sequencing
+let node_queue = []
+let queue_drawn = false
+let coupon_threshold = Infinity
+const ACCURACY = 0.9
+let threshold_set = false
+let nodes_received = 0
+let nodes_in_layers_mix
+
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
+
+    if (!threshold_set) {
+        threshold_set = true
+        nodes_in_layers_mix = Array(120).fill(1)
+
+        // use coupon problem to set the threshhold of how many nodes we need to see before we start to empty the queue and draw the rest of the nodes.
+        // 100.000 is just a hardcoded value above of how many nodes we have (we have 36.000)
+        for (i = node.total_layers; i <= 100000; i++) {
+            if (coupon_problem(node.total_layers, i) >= ACCURACY) {
+                coupon_threshold = i
+                console.log(`We need to see ${i} nodes before we draw any of them.`)
+                console.log(`This gives us >${ACCURACY*100}% chance of having seen all layers`)
+                break;
+            }
+        }
+    }
     
-    // Gives som controle over level of detail (LoD)
+    // Gives some controle over level of detail (LoD)
     if(node.depth > LAYERS_TO_SHOW) {
         return
     }
@@ -55,6 +77,24 @@ function add_tree_map_node_mixed(node, canvas) {
         BACKGROUND_DRAW_mixed = true
     }
 
+    if (nodes_received >= coupon_threshold) {
+        draw_node_mix(node)
+        if (!queue_drawn) {
+            queue_drawn = true
+            node_queue.forEach(node => draw_node_mix(node))
+        }
+    } else {
+        nodes_received++
+        node_queue.push(node)
+        nodes_in_layers_mix[node.depth] = node.nodes_in_own_layer
+        nodes_in_layers_mix[node.random_layer] = node.nodes_in_random_layer
+    }
+}
+
+function draw_node_mix(node) {
+
+    if (nodes_in_layers_mix[node.depth] == 1 && node.depth != 1 ) return 
+
     // defines the current container - the final container is drawn
     let current_x = treemap_x
     let current_y = treemap_y
@@ -72,7 +112,11 @@ function add_tree_map_node_mixed(node, canvas) {
     let node_val = node.interval[1] - node.interval[0] 
 
     // slice or dice the current container untill we have a volume that somewhat respects the desired volume.
-    for (i = 2; i <= node.depth; i++) {
+    for (i = 3; i <= node.depth; i++) {
+        if (nodes_in_layers_mix[i] == 1 && i != 1) {
+            i++
+            continue
+        }
         // the volume of the current container compared to the root container
         let current_val = current_interval[1] - current_interval[0]
 
@@ -81,7 +125,7 @@ function add_tree_map_node_mixed(node, canvas) {
             break 
 
         // Computes how many areas this layer consists of - ratio between areas we need and areas in the previous layer
-        current_layer_areas = Math.ceil(nodes_in_layers[i] / current_layer_areas) + 1
+        current_layer_areas = Math.ceil(nodes_in_layers_mix[i] / current_layer_areas) + 1
 
         // Computes the interval fraction of a single area for this layer
         let splits_frac_of_area = 1 / current_layer_areas

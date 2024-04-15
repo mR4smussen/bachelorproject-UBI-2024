@@ -28,12 +28,12 @@ const USE_THRESHHOLD = false
 
 const MAKE_SQ = false
 
-let node_queue = []
-let queue_drawn = false
-let coupon_threshold = Infinity
-const ACCURACY = 0.9
-let threshold_set = false
-let nodes_received = 0
+let node_queue_sq = []
+let queue_drawn_sq = false
+let coupon_threshold_sq = Infinity
+const ACCURACY_sq = 0.9
+let threshold_set_sq = false
+let nodes_received_sq = 0
 let nodes_in_layers_sq
 let total_nodes_sq = Infinity
 
@@ -47,23 +47,23 @@ let avg_value_ratio_error = 0
 let nodes_visualized = 0
 
 function add_tree_map_node_mixed_squarified(node, canvas) {
-    if (!threshold_set) {
-        threshold_set = true
+    if (!threshold_set_sq) {
+        threshold_set_sq = true
         nodes_in_layers_sq = Array(120).fill(1)
 
         // use coupon problem to set the threshhold of how many nodes we need to see before we start to empty the queue and draw the rest of the nodes.
         // 100.000 is just a hardcoded value above of how many nodes we have (we have 36.000)
         for (i = node.total_layers; i <= 100000; i++) {
-            if (coupon_problem(node.total_layers, i) >= ACCURACY) {
-                coupon_threshold = i
+            if (coupon_problem(node.total_layers, i) >= ACCURACY_sq) {
+                coupon_threshold_sq = i
                 console.log(`We need to see ${i} nodes before we draw any of them.`)
-                console.log(`This gives us >${ACCURACY*100}% chance of having seen all layers`)
+                console.log(`This gives us >${ACCURACY_sq*100}% chance of having seen all layers`)
                 break;
             }
         }
     }
 
-    // Gives som controle over level of detail (LoD)
+    // Gives some controle over level of detail (LoD)
     if(node.depth > LAYERS_TO_SHOW_sq) {
         return
     }
@@ -86,23 +86,27 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
         BACKGROUND_DRAW_sq = true
     }
 
-    if (nodes_received > coupon_threshold) {
-        draw_node(node)
-        if (!queue_drawn) {
-            queue_drawn = true
+    if (nodes_received_sq >= coupon_threshold_sq) {
+        draw_node_sq(node)
+        if (!queue_drawn_sq) {
+            queue_drawn_sq = true
             total_nodes_sq = nodes_in_layers_sq.reduce((accumulator, currentValue) => currentValue != 1 ? accumulator + currentValue : accumulator, 1);
-            node_queue.forEach(node => draw_node(node))
+            node_queue_sq.forEach(node => draw_node_sq(node))
         }
     } else {
-        nodes_received++
-        node_queue.push(node)
+        nodes_received_sq++
+        node_queue_sq.push(node)
         nodes_in_layers_sq[node.depth] = node.nodes_in_own_layer
         nodes_in_layers_sq[node.random_layer] = node.nodes_in_random_layer
     }
 }
 
-function draw_node(node) {
-    if (nodes_in_layers_sq[node.depth] != 1) nodes_visualized++
+function draw_node_sq(node) {
+    if (nodes_in_layers_sq[node.depth] != 1 || node.depth == 1 ) nodes_visualized++
+    else {
+        seen++
+        return
+    } 
     setTimeout(() => {
         let i = 1
         let current_interval = [0,1]
