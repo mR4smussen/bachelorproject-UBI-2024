@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
+  let CHART_TYPE = 4
+  let urlParams = new URLSearchParams(window.location.search);
+  let layoutType = urlParams.get('layout_type');
+  if (layoutType == "Sunburst") CHART_TYPE = 0
+  else if (layoutType == "Icicle") CHART_TYPE = 3
+  else if (layoutType == "Slice and Dice") CHART_TYPE = 4
+  else if (layoutType == "Squarified")  CHART_TYPE = 5
+  else return 
+
+
   // Get the canvas
   const canvas = document.getElementById("sunburstCanvas");
   const ctx = canvas.getContext("2d");
@@ -8,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // the amount of data the client receives at a time
   var CHUNK_SIZE = 100;
   // pick a chart type: 0 = sunburst, 1 = tree map parent approx, 2 = tree map bookshelves, 3 = icicle, 4 = tree map mix. 5 = squarified
-  const CHART_TYPE = 5
+  // const CHART_TYPE = 4
 
   fetch(DATA_FILE)
     .then(response => response.text())

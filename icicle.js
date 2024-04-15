@@ -24,7 +24,7 @@ const FILL_NODES = true
 const LoD = 150
 
 // the size of each view
-const ICICLE_CANVAS_SIZE = [4000, 50]
+const ICICLE_CANVAS_SIZE = [2000, 20]
 
 // global flag to indicate when the views are being animated
 let ANIMATING = false
@@ -134,7 +134,7 @@ function add_icicle(node, canvas) {
             view_height);       // height 
 
         ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2 * (Math.min(0.2, 10 / node.depth));
         ctx.strokeRect(
             node_x,              // x pos
             treemap_y,           // y pos

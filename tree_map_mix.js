@@ -4,8 +4,9 @@
 
 
 // [width, height] for the canvas's
-const CANVAS_SIZE_mixed = [1400, 1400]
-// const CANVAS_SIZE_mixed = [2000, 1000]
+// const CANVAS_SIZE_mixed = [1400, 1400]
+const CANVAS_SIZE_mixed = [2000, 1000]
+// const CANVAS_SIZE_mixed = [1000, 500]
 // CANVAS_SIZE_mixed = [4096, 2160] 
 // CANVAS_SIZE_mixed = [6500, 6000]
 
@@ -30,7 +31,7 @@ const ROUND_SIZE_UP = true
 let node_queue = []
 let queue_drawn = false
 let coupon_threshold = Infinity
-const ACCURACY = 0.9
+let ACCURACY = 0.9
 let threshold_set = false
 let nodes_received = 0
 let nodes_in_layers_mix
@@ -38,7 +39,18 @@ let nodes_in_layers_mix
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
 
-    if (!threshold_set) {
+    let urlParams = new URLSearchParams(window.location.search);
+    let guarantee_perc = urlParams.get('guarantee_perc');
+    let guarantee_num = urlParams.get('guarantee_num');
+    if (guarantee_perc != "") 
+        ACCURACY = parseInt(guarantee_perc) / 100
+    if (guarantee_num && !threshold_set) {
+        threshold_set = true
+        nodes_in_layers_mix = Array(120).fill(1)
+        coupon_threshold = guarantee_num
+        console.log("Setting the threshold of how many we need to see to", coupon_threshold)
+    }
+    else if (!threshold_set) {
         threshold_set = true
         nodes_in_layers_mix = Array(120).fill(1)
 
@@ -172,29 +184,11 @@ function draw_node_mix(node) {
 
     // Make a border for the current node/container
     ctx.strokeStyle = get_color(node.colorNr, node.depth, true);
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 10 * (Math.min(0.2, 10 / node.depth));
     ctx.strokeRect(
         current_x,              // x pos
         current_y,              // y pos
         current_width,          // width
         current_height);        // height    
-
-    // If chosen - we draw a black outline for each leaf and fill them with their colors
-    if (node.isLeaf && COLOR_LEAFS_mixed) {
-        ctx.fillStyle = get_color(node.colorNr, node.depth, true);
-        ctx.fillRect(
-            current_x,              // x pos
-            current_y,              // y pos
-            current_width,          // width
-            current_height);        // height   
-
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 2;
-        ctx.strokeRect( 
-            current_x,              // x pos
-            current_y,              // y pos
-            current_width,          // width
-            current_height);        // height  
-    }  
     
 }

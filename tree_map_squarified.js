@@ -31,7 +31,7 @@ const MAKE_SQ = false
 let node_queue_sq = []
 let queue_drawn_sq = false
 let coupon_threshold_sq = Infinity
-const ACCURACY_sq = 0.9
+let ACCURACY_sq = 0.9
 let threshold_set_sq = false
 let nodes_received_sq = 0
 let nodes_in_layers_sq
@@ -47,7 +47,19 @@ let avg_value_ratio_error = 0
 let nodes_visualized = 0
 
 function add_tree_map_node_mixed_squarified(node, canvas) {
-    if (!threshold_set_sq) {
+
+    let urlParams = new URLSearchParams(window.location.search);
+    let guarantee_perc = urlParams.get('guarantee_perc');
+    let guarantee_num = urlParams.get('guarantee_num');
+    if (guarantee_perc != "") 
+        ACCURACY_sq = parseInt(guarantee_perc) / 100
+    if (guarantee_num && !threshold_set_sq) {
+        threshold_set_sq = true
+        nodes_in_layers_sq = Array(120).fill(1)
+        coupon_threshold_sq = guarantee_num
+        console.log("Setting the threshold of how many we need to see to", coupon_threshold_sq)
+    }
+    else if (!threshold_set_sq) {
         threshold_set_sq = true
         nodes_in_layers_sq = Array(120).fill(1)
 

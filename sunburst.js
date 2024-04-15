@@ -2,7 +2,7 @@ function draw_sunburst(node, canvas) {
 
     const ctx = canvas.getContext("2d");
 
-    const LAYER_SIZE = 20
+    const LAYER_SIZE = 8
 
     // the ratio between 1 value in an interval and 1 degree on the circle.
     const RATIO = 2 * Math.PI
@@ -24,7 +24,8 @@ function draw_sunburst(node, canvas) {
     ctx.arc(x, y, 1 * LAYER_SIZE + (LAYER_SIZE * (node.depth - 1)), node.interval[1] * RATIO, node.interval[0] * RATIO, true); // inner 
     ctx.fill();
     // the outline width is based on the interval size
-    ctx.lineWidth = Math.max((node.interval[1] * RATIO - node.interval[0] * RATIO), 0.5);
+    // ctx.lineWidth = Math.max((node.interval[1] * RATIO - node.interval[0] * RATIO), 0.05);
+    ctx.lineWidth = 5 * (Math.min(0.2, 10 / node.depth));
     ctx.strokeStyle = "#000"; // outline color
     ctx.stroke();
 }

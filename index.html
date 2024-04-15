@@ -12,12 +12,71 @@
 
     canvas {
         margin: 0px;
-        border: 1px solid black; /* Optional: Add border for visibility */
+        /* border: 1px solid black; Optional: Add border for visibility */
     }
+
+    form {
+      margin-bottom: 10px;
+    }
+
+    #layout_type {
+      border-radius: 5%;
+      width: 500px;
+      height: 100px;
+      font-size: 80px;
+    }
+
+    #draw_button{
+      background-color: green;
+      border-radius: 5%;
+      width: 250px;
+      height: 100px;
+      font-size: 80px;
+    }
+
+    .number_input{
+      margin-left: 10px;
+      border-radius: 5%;
+      height: 45px;
+      width: 250px;
+      font-size: 20px;
+    }
+
+    #nodes_to_see_input {
+      margin-left: 10px;
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .checkbox {
+      margin-left: 20px;
+      height: 45px;
+      width: 45px;
+    }
+
   </style>
 </head>
 <body>
-  <canvas id="sunburstCanvas" width="6500" height="6000"></canvas>
+
+  <form style="display: flex;">
+    <button id="draw_button">
+      Draw
+    </button>
+    <select id="layout_type" name="layout_type" >
+      <option value="" disabled selected hidden>Pick Layout</option>
+      <option value="Sunburst">Sunburst</option>
+      <option value="Icicle">Icicle</option>
+      <option value="Slice and Dice">Slice & Dice</option>
+      <option value="Squarified">Squarified</option>
+    </select>
+    <div id="nodes_to_see_input">
+      <input type="number" class="number_input" name="guarantee_perc" placeholder="Guarantee in %">
+      <input type="number" class="number_input" name="guarantee_num" placeholder="Nodes to wait for">
+    </div>
+  </form>
+
+  <canvas id="sunburstCanvas" width="2000" height="1000"></canvas>
   <script src="sunburst.js"></script>
   <script src="tree_map_parent_approx.js"></script>
   <script src="tree_map_bookshelves.js"></script>
