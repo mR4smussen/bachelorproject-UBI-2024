@@ -44,11 +44,12 @@ let undefined_ratios = 0
 let avg_value_error = 0
 let biggest_value_error = 0
 let avg_value_ratio_error = 0
+let nodes_visualized = 0
 
 function add_tree_map_node_mixed_squarified(node, canvas) {
     if (!threshold_set) {
         threshold_set = true
-        nodes_in_layers_sq = Array(120).fill(0)
+        nodes_in_layers_sq = Array(120).fill(1)
 
         // use coupon problem to set the threshhold of how many nodes we need to see before we start to empty the queue and draw the rest of the nodes.
         // 100.000 is just a hardcoded value above of how many nodes we have (we have 36.000)
@@ -89,7 +90,7 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
         draw_node(node)
         if (!queue_drawn) {
             queue_drawn = true
-            total_nodes_sq = nodes_in_layers_sq.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+            total_nodes_sq = nodes_in_layers_sq.reduce((accumulator, currentValue) => currentValue != 1 ? accumulator + currentValue : accumulator, 1);
             node_queue.forEach(node => draw_node(node))
         }
     } else {
@@ -101,10 +102,7 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
 }
 
 function draw_node(node) {
-    if (nodes_in_layers_sq[node.depth] == 0) {
-        console.log("found a node which we don't know the layer size for")
-        return 
-    }
+    if (nodes_in_layers_sq[node.depth] != 1) nodes_visualized++
     setTimeout(() => {
         let i = 1
         let current_interval = [0,1]
@@ -117,6 +115,10 @@ function draw_node(node) {
         let ratio = view_height / view_width
         let next_value = 1
         while (node.interval[1] - node.interval[0] < next_value && i < node.depth) {
+            if (nodes_in_layers_sq[i] == 1 && i != 1) {
+                i++
+                continue
+            }
             [next_x, next_y, next_width, next_height, next_value, prev_layer_areas, current_interval, prev_area_val, ratio] = 
             compute_next_container(node.interval, nodes_in_layers_sq[i], current_interval, prev_layer_areas, next_height, next_width, next_x, next_y, prev_area_val)
             i++
@@ -161,6 +163,12 @@ function draw_node(node) {
             console.log(`average value error: ${(avg_value_error / seen).toFixed(5)}`)
             console.log(`average value ratio error: 1:${(avg_value_ratio_error / seen).toFixed(3)}`)
             console.log(`average ratio: 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
+            console.log(`nodes visualized: ${nodes_visualized}`)
+            console.log(`Layers we don't know the size of: ${nodes_in_layers_sq.reduce((acc, curr, idx) => {
+                if (curr == 1 && idx != 0 && idx != 1)
+                    acc.push(idx)
+                return acc
+            }, [])}`)
         }
     }, 0)
 }
