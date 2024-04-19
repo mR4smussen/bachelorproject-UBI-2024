@@ -1,4 +1,13 @@
+// used only for testing / screenshots
+let total_nodes_sb = 36000
+let nodes_visualized_sb = 0
+const STOP_AFTER_PERC_sb = 1
+
 function draw_sunburst(node, canvas) {
+
+    if (nodes_visualized_sb > total_nodes_sb * STOP_AFTER_PERC_sb) return 
+
+    nodes_visualized_sb++
 
     const ctx = canvas.getContext("2d");
 

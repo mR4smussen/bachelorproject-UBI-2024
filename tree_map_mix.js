@@ -4,13 +4,15 @@
 
 
 // [width, height] for the canvas's
-// const CANVAS_SIZE_mixed = [1400, 1400]
-const CANVAS_SIZE_mixed = [2000, 1000]
+const CANVAS_SIZE_mixed = [1400, 1400]
+// const CANVAS_SIZE_mixed = [2800, 2800]
+// const CANVAS_SIZE_mixed = [2000, 1000]
 // const CANVAS_SIZE_mixed = [1000, 500]
 // CANVAS_SIZE_mixed = [4096, 2160] 
 // CANVAS_SIZE_mixed = [6500, 6000]
 
-let TREE_COLOR_mixed = "#34495e"
+// let TREE_COLOR_mixed = "#34495e"
+let TREE_COLOR_mixed = "#dbdbdb"
 
 // global var makes sure we only draw the background once
 let BACKGROUND_DRAW_mixed = false
@@ -35,6 +37,13 @@ let ACCURACY = 0.9
 let threshold_set = false
 let nodes_received = 0
 let nodes_in_layers_mix
+
+
+
+// used only for testing / screenshots
+let total_nodes_mix = Infinity
+let nodes_visualized_mix = 0
+const STOP_AFTER_PERC_MIX = 1
 
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
@@ -93,6 +102,7 @@ function add_tree_map_node_mixed(node, canvas) {
         draw_node_mix(node)
         if (!queue_drawn) {
             queue_drawn = true
+            total_nodes_mix = nodes_in_layers_mix.reduce((accumulator, currentValue) => currentValue != 1 ? accumulator + currentValue : accumulator, 1);
             node_queue.forEach(node => draw_node_mix(node))
         }
     } else {
@@ -106,6 +116,9 @@ function add_tree_map_node_mixed(node, canvas) {
 function draw_node_mix(node) {
 
     if (nodes_in_layers_mix[node.depth] == 1 && node.depth != 1 ) return 
+    if (nodes_visualized_mix > total_nodes_mix * STOP_AFTER_PERC_MIX) return 
+
+    nodes_visualized_mix++
 
     // defines the current container - the final container is drawn
     let current_x = treemap_x
@@ -146,8 +159,8 @@ function draw_node_mix(node) {
         let normalized_interval_start = ((node.interval[0] - current_interval[0]) / current_val)
 
         // Either slice or dice the current container
-        // if (i % 2 == 0) { // correct slice n dice - not as pretty as the fair cut
-        if (current_width > current_height) { // fair cut
+        if (i % 2 == 0) { // correct slice n dice - not as pretty as the fair cut
+        // if (current_width > current_height) { // fair cut
             // Divide the container width and value with the amount of new areas we make for this layer
             current_width /= current_layer_areas
             value /= current_layer_areas
@@ -184,11 +197,20 @@ function draw_node_mix(node) {
 
     // Make a border for the current node/container
     ctx.strokeStyle = get_color(node.colorNr, node.depth, true);
+    // ctx.strokeStyle = get_color(7, node.depth, true);
     ctx.lineWidth = 10 * (Math.min(0.2, 10 / node.depth));
     ctx.strokeRect(
         current_x,              // x pos
         current_y,              // y pos
         current_width,          // width
         current_height);        // height    
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 0.5
+    ctx.strokeRect( 
+        current_x,              // x pos
+        current_y,              // y pos
+        current_width,          // width
+        current_height);        // height 
     
 }

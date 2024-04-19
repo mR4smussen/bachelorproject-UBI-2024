@@ -8,7 +8,8 @@ const CANVAS_SIZE_sq = [2000, 1000] // good average ratio
 // CANVAS_SIZE_sq = [4096, 2160] 
 // CANVAS_SIZE_sq = [6500, 6000]
 
-let TREE_COLOR_sq = "#34495e"
+// let TREE_COLOR_sq = "#34495e"
+let TREE_COLOR_sq = "#dbdbdb"
 
 // global var makes sure we only draw the background once
 let BACKGROUND_DRAW_sq = false
@@ -45,6 +46,9 @@ let avg_value_error = 0
 let biggest_value_error = 0
 let avg_value_ratio_error = 0
 let nodes_visualized = 0
+
+// used only for testing / screenshots
+const STOP_AFTER_PERC_SQ = 1
 
 function add_tree_map_node_mixed_squarified(node, canvas) {
 
@@ -119,6 +123,7 @@ function draw_node_sq(node) {
         seen++
         return
     } 
+    if (nodes_visualized > total_nodes_sq * STOP_AFTER_PERC_SQ) return 
     setTimeout(() => {
         let i = 1
         let current_interval = [0,1]
@@ -142,7 +147,7 @@ function draw_node_sq(node) {
 
         if ((Math.abs(ratio - 1) < 1 || !MAKE_SQ) && (node.interval[1] - node.interval[0] > value_threshhold || !USE_THRESHHOLD)) {
             ctx.strokeStyle = get_color(node.colorNr, node.depth, true);
-            ctx.strokeStyle = get_color(7, node.depth, true);
+            // ctx.strokeStyle = get_color(2, node.depth, true);
             // ctx.lineWidth = 1;
             ctx.lineWidth = 10 * (Math.min(0.2, 10 / node.depth));
             ctx.strokeRect(
@@ -151,13 +156,13 @@ function draw_node_sq(node) {
                 next_width,          // width
                 next_height);        // height 
 
-            // ctx.strokeStyle = "black";
-            // ctx.lineWidth = 0.5
-            // ctx.strokeRect( 
-            //     next_x,              // x pos
-            //     next_y,              // y pos
-            //     next_width,          // width
-            //     next_height);        // height 
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 0.5
+            ctx.strokeRect( 
+                next_x,              // x pos
+                next_y,              // y pos
+                next_width,          // width
+                next_height);        // height 
             
         }
 
