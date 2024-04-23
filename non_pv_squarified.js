@@ -1,7 +1,8 @@
 // this switches the layout on/off
 let ON = true;
 
-const CANVAS_SIZE_nopv = [1500, 1000] // the ratio of the example from the paper
+// const CANVAS_SIZE_nopv = [1500, 1000] // the ratio of the example from the paper
+const CANVAS_SIZE_nopv = [2000, 1000] 
 // const CANVAS_SIZE_nopv = [1000, 2000] 
 // const CANVAS_SIZE_nopv = [1000, 1000] 
 
@@ -83,23 +84,24 @@ class TreeNode {
                 width -= stack_width
                 nodes_in_stack.forEach(node => {
                     let node_height = (node.area / stack_width) * normalization_factor
-                    
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = get_color(node.branchNr+2, 0, false);
-                    
-                    ctx.strokeRect(
-                        x,              
-                        next_node_y,             
-                        stack_width,         
-                        node_height);
+
+                        if (node.children.length == 0) {
+                            ctx.fillStyle = get_color(node.branchNr, 0, false);
+                            ctx.fillRect(
+                                x,              
+                                next_node_y,             
+                                stack_width,         
+                                node_height);
+                        }
                         
                         ctx.strokeStyle = "black";
-                        ctx.lineWidth = 0.1
+                        ctx.lineWidth = 0.5
                         ctx.strokeRect( 
                             x,              
                             next_node_y,             
                             stack_width,         
                             node_height);
+
                     node.visualize_children(stack_width, node_height, x, next_node_y, node.area)
                     next_node_y += node_height
                 })
@@ -111,21 +113,23 @@ class TreeNode {
                 nodes_in_stack.forEach(node => {
                     let node_width = (node.area / stack_height) * normalization_factor
 
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = get_color(node.branchNr+2, 0, false);
-                    ctx.strokeRect(
-                        next_node_x,              
-                        y,             
-                        node_width,         
-                        stack_height);
+                    if (node.children.length == 0) {
+                        ctx.fillStyle = get_color(node.branchNr, 0, false);
+                        ctx.fillRect(
+                            next_node_x,              
+                            y,             
+                            node_width,         
+                            stack_height);
+                    }
 
                     ctx.strokeStyle = "black";
-                    ctx.lineWidth = 0.1
+                    ctx.lineWidth = 0.5
                     ctx.strokeRect( 
                         next_node_x,              
                         y,             
                         node_width,         
                         stack_height);
+                    
                     node.visualize_children(node_width, stack_height, next_node_x, y, node.area)
                     next_node_x += node_width
                 })
