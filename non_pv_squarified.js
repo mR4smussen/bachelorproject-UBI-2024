@@ -120,7 +120,7 @@ class TreeNode {
                         stack_height);
 
                     ctx.strokeStyle = "black";
-                    ctx.lineWidth = 0.5
+                    ctx.lineWidth = 0.1
                     ctx.strokeRect( 
                         next_node_x,              
                         y,             
