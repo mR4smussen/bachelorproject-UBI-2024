@@ -23,8 +23,8 @@ let LAYERS_TO_SHOW_sq = 150
 // how to respect sizes (round up or down)
 const ROUND_SIZE_UP_sq = true
 
-// const value_threshhold = 0.00005
-const value_threshhold = 0.5
+const value_threshhold = 0.00005
+// const value_threshhold = 0.5
 const USE_THRESHHOLD = false
 
 const MAKE_SQ = false
