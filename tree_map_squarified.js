@@ -47,6 +47,15 @@ let biggest_value_error = 0
 let avg_value_ratio_error = 0
 let nodes_visualized = 0
 
+// for eval.
+let last_area_number = 0 
+let ancestor_area_number = [] // keeps track of which area number a node should pick
+let last_node_layer = 0
+let area_nr_errors = 0
+let estimations_made = 0
+let estimations_error_size = 0
+let estimations_weighted_error_size = 0
+
 // used only for testing / screenshots
 const STOP_AFTER_PERC_SQ = 1
 
@@ -59,13 +68,15 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
         ACCURACY_sq = parseInt(guarantee_perc) / 100
     if (guarantee_num && !threshold_set_sq) {
         threshold_set_sq = true
-        nodes_in_layers_sq = Array(120).fill(1)
+        nodes_in_layers_sq = Array(node.total_layers + 1).fill(1)
+        ancestor_area_number = Array(node.total_layers + 1).fill(1)
         coupon_threshold_sq = guarantee_num
         console.log("Setting the threshold of how many we need to see to", coupon_threshold_sq)
     }
     else if (!threshold_set_sq) {
         threshold_set_sq = true
-        nodes_in_layers_sq = Array(120).fill(1)
+        nodes_in_layers_sq = Array(node.total_layers + 1).fill(1)
+        ancestor_area_number = Array(node.total_layers + 1).fill(1)
 
         // use coupon problem to set the threshhold of how many nodes we need to see before we start to empty the queue and draw the rest of the nodes.
         // 100.000 is just a hardcoded value above of how many nodes we have (we have 36.000)
@@ -118,6 +129,7 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
 }
 
 function draw_node_sq(node) {
+    last_area_number = 1
     if (nodes_in_layers_sq[node.depth] != 1 || node.depth == 1 ) nodes_visualized++
     else {
         seen++
@@ -141,8 +153,19 @@ function draw_node_sq(node) {
                 continue
             }
             [next_x, next_y, next_width, next_height, next_value, prev_layer_areas, current_interval, prev_area_val, ratio] = 
-            compute_next_container(node.interval, nodes_in_layers_sq[i], current_interval, prev_layer_areas, next_height, next_width, next_x, next_y, prev_area_val)
+            compute_next_container(node.interval, nodes_in_layers_sq[i], current_interval, prev_layer_areas, next_height, next_width, next_x, next_y, prev_area_val, i)
             i++
+        }
+
+        // for eval.
+        if (node.depth <= last_node_layer) {
+            for (let i = node.depth; i <= node.total_layers; i++) {
+                ancestor_area_number[i] = 1
+            }
+        }
+        last_node_layer = node.depth
+        if (i < node.depth) {
+            ancestor_area_number[node.depth] = last_area_number
         }
 
         if ((Math.abs(ratio - 1) < 1 || !MAKE_SQ) && (node.interval[1] - node.interval[0] > value_threshhold || !USE_THRESHHOLD)) {
@@ -163,8 +186,17 @@ function draw_node_sq(node) {
                 next_y,              // y pos
                 next_width,          // width
                 next_height);        // height 
-            
         }
+
+        // just for evaluation
+        // if (node.isLeaf) {
+        //     ctx.fillStyle = get_color(node.colorNr, node.depth, true);
+        //     ctx.fillRect(
+        //         next_x,              // x pos
+        //         next_y,              // y pos
+        //         next_width,          // width
+        //         next_height);        // height
+        // }
 
         // print some evaluation stats
         seen++
@@ -175,27 +207,24 @@ function draw_node_sq(node) {
 
         if (ratio < Infinity) avg_ratio += ratio 
         else undefined_ratios++
-        
-
-        if (Math.abs(drawn_value - wanted_value) > biggest_value_error) biggest_value_error = Math.abs(drawn_value - wanted_value)
-
         if (seen == total_nodes_sq) {
             console.log(`largest value error: ${(biggest_value_error).toFixed(3)}`)
             console.log(`average value error: ${(avg_value_error / seen).toFixed(5)}`)
-            console.log(`average value ratio error: 1:${(avg_value_ratio_error / seen).toFixed(3)}`)
+            console.log(`average weighted value error: 1:${(avg_value_ratio_error / seen).toFixed(3)}`)
             console.log(`average ratio: 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
             console.log(`nodes visualized: ${nodes_visualized}`)
-            console.log(`Layers we don't know the size of: ${nodes_in_layers_sq.reduce((acc, curr, idx) => {
-                if (curr == 1 && idx != 0 && idx != 1)
-                    acc.push(idx)
-                return acc
-            }, [])}`)
+            console.log("estimation errors:", area_nr_errors, 
+                        "\ntotal estimations:", estimations_made, 
+                        "\nestimation error percentage:", +((area_nr_errors / estimations_made)*100).toFixed(2),
+                        "\naverage area error:", estimations_error_size / area_nr_errors,
+                        "\naverage weighted error:", estimations_weighted_error_size / area_nr_errors, // not sure to use this or the one below
+                        "\naverage weighted estimation:", estimations_weighted_error_size / estimations_made)
         }
     }, 0)
 }
 
 // Finds the next container based on the current container
-function compute_next_container(node_interval, layer_size, container_interval, current_layer_areas, container_height, container_width, container_x, container_y, prev_area_val) {
+function compute_next_container(node_interval, layer_size, container_interval, current_layer_areas, container_height, container_width, container_x, container_y, prev_area_val, current_layer_depth = 0) {
 
     let container_value = +(container_interval[1] - container_interval[0]).toFixed(15)
 
@@ -214,6 +243,15 @@ function compute_next_container(node_interval, layer_size, container_interval, c
 
     // Computes which area of the current layer the current node should be within
     let area_nr = Math.floor(+(normalized_interval_start / splits_frac_of_area).toFixed(10)) + 1 // tofixed?
+
+    // for eval.
+    last_area_number = area_nr
+    estimations_made++
+    if (ancestor_area_number[current_layer_depth] != area_nr) {
+        area_nr_errors++
+        estimations_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr)
+        estimations_weighted_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr) / this_layer_areas
+    }
 
     // The desired volume of the final container compared to the root container
     let stacked = 0
@@ -284,7 +322,6 @@ function compute_next_container(node_interval, layer_size, container_interval, c
                 current_y = current_y + (current_height * (nr_in_this_stack-1))
                 current_interval[0] = +((current_interval[0] + area_value * (nr_in_this_stack-1)).toFixed(15))
                 current_interval[1] = current_interval[0] + area_value
-                // console.log("return horizontally", current_x, current_y, current_width, current_height)
                 return [current_x, current_y, current_width, current_height, area_value, this_layer_areas, current_interval, area_value, current_ratio]
             }
             // if the area we are looking for was not in the previous stack:

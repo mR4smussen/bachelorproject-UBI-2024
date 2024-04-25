@@ -2,7 +2,8 @@ const fs = require("fs");
 
 let ROOT_INTERVAL_SIZE = 0;
 
-const TOTAL_LAYERS = 120; // maybe this should not be hardcoded...
+let TOTAL_LAYERS = 120; // maybe this should not be hardcoded...
+// TOTAL_LAYERS = 3; // maybe this should not be hardcoded...
 let nodes_in_layers = Array(TOTAL_LAYERS + 1).fill(0)
 
 class TreeNode {
@@ -65,6 +66,8 @@ class Tree {
     connections.forEach(({ source, target }) => {
       if (!nodes[source]) {
         nodes[source] = new TreeNode(source);
+        if (source == 1)
+          this.root = nodes[source]
       }
 
       if (!nodes[target]) {
@@ -74,16 +77,6 @@ class Tree {
       nodes[source].children.push(nodes[target]);
     });
 
-    // the node which is not the child of another node is the root
-    const rootCandidates = Object.values(nodes).filter(
-      (node) => !Object.values(nodes).some((n) => n.children.includes(node))
-    );
-    if (rootCandidates.length === 1) {
-      this.root = rootCandidates[0];
-      return this.root;
-    } else {
-      throw new Error("The tree should have exactly one root.");
-    }
   }
 }
 

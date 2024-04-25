@@ -6,22 +6,35 @@ const CANVAS_SIZE_nopv = [2000, 1000]
 // const CANVAS_SIZE_nopv = [1000, 2000] 
 // const CANVAS_SIZE_nopv = [1000, 1000] 
 
+// for the evaluation
+let total_amount_nopv = 0
+let avg_ratio_nopv = 0
+let avg_weighted_ratio_nopv = 0
+let total_area = 0
+
 class TreeNode {
   constructor() {
     this.children = [];
     this.branchNr = null
     this.area = 0
+    this.depth = 1 // only used for the evaluation, not neccesary for the original squarified algorithm
   }
 
   set_area(branchNr = 0) {
         this.branchNr = branchNr;
         this.children.forEach((child) => {
-            let child_area = child.set_area(branchNr + 1)
+            child.depth = this.depth + 1
+            let childBranchNr = branchNr
+            if (this.depth % 5 == 0 || branchNr == null) {
+                childBranchNr = Math.floor(Math.random() * 10);
+            }
+            let child_area = child.set_area(childBranchNr)
             this.area += child_area
         })
         if (!this.area) 
             this.area = 1
         
+        total_area += this.area
         return this.area
     }
 
@@ -86,7 +99,7 @@ class TreeNode {
                     let node_height = (node.area / stack_width) * normalization_factor
 
                         if (node.children.length == 0) {
-                            ctx.fillStyle = get_color(node.branchNr, 0, false);
+                            ctx.fillStyle = get_color(node.branchNr, node.depth, true);
                             ctx.fillRect(
                                 x,              
                                 next_node_y,             
@@ -104,6 +117,11 @@ class TreeNode {
 
                     node.visualize_children(stack_width, node_height, x, next_node_y, node.area)
                     next_node_y += node_height
+
+                    // Evaluation
+                    total_amount_nopv++
+                    avg_ratio_nopv += node_height > stack_width ? node_height / stack_width : stack_width / node_height
+                    avg_weighted_ratio_nopv += (node_height > stack_width ? node_height / stack_width : stack_width / node_height)*node.area
                 })
                 x += stack_width
             } else {
@@ -114,7 +132,7 @@ class TreeNode {
                     let node_width = (node.area / stack_height) * normalization_factor
 
                     if (node.children.length == 0) {
-                        ctx.fillStyle = get_color(node.branchNr, 0, false);
+                        ctx.fillStyle = get_color(node.branchNr, node.depth, true);
                         ctx.fillRect(
                             next_node_x,              
                             y,             
@@ -132,6 +150,11 @@ class TreeNode {
                     
                     node.visualize_children(node_width, stack_height, next_node_x, y, node.area)
                     next_node_x += node_width
+
+                    // for evaluation
+                    total_amount_nopv++
+                    avg_ratio_nopv += stack_height > node_width ? stack_height / node_width : node_width / stack_height
+                    avg_weighted_ratio_nopv += (stack_height > node_width ? stack_height / node_width : node_width / stack_height)*node.area
                 })
                 y += stack_height
             }
@@ -209,6 +232,9 @@ if (ON) {
         tree.buildTree(connections); // we build the tree top-down
         tree.root.set_area()
         tree.root.visualize_children(canvas.width, canvas.height, 0, 0, tree.root.area)
+        console.log(`mean aspect ratio: 1:${(avg_ratio_nopv / total_amount_nopv).toFixed(3)}`)
+        console.log(`weighted mean aspect ratio: 1:${(avg_weighted_ratio_nopv / total_area).toFixed(3)}`)
+        console.log(tree)
     })
 }
 
