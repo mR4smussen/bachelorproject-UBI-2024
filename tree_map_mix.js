@@ -4,9 +4,9 @@
 
 
 // [width, height] for the canvas's
-const CANVAS_SIZE_mixed = [1400, 1400]
+// const CANVAS_SIZE_mixed = [1400, 1400]
 // const CANVAS_SIZE_mixed = [2800, 2800]
-// const CANVAS_SIZE_mixed = [2000, 1000]
+const CANVAS_SIZE_mixed = [2000, 1000]
 // const CANVAS_SIZE_mixed = [1000, 500]
 // CANVAS_SIZE_mixed = [4096, 2160] 
 // CANVAS_SIZE_mixed = [6500, 6000]
@@ -38,12 +38,25 @@ let threshold_set = false
 let nodes_received = 0
 let nodes_in_layers_mix
 
-
-
 // used only for testing / screenshots
 let total_nodes_mix = Infinity
 let nodes_visualized_mix = 0
 const STOP_AFTER_PERC_MIX = 1
+
+// for evaluation 
+let last_area_number_mix = 0 
+let ancestor_area_number_mix = [] // keeps track of which area number a node should pick
+let seen_mix = 0
+let last_node_layer_mix = 0
+let mean_ar_mix = 0
+let weighted_mean_ar_mix = 0
+let total_area_drawn_mix = 0
+let mean_area_error_mix = 0
+let estimations_made_mix = 0
+let estimations_error_size_mix = 0
+let estimations_weighted_error_size_mix = 0
+let weighted_mean_area_error_mix = 0
+let total_wanted_value_mix = 0
 
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
@@ -56,12 +69,14 @@ function add_tree_map_node_mixed(node, canvas) {
     if (guarantee_num && !threshold_set) {
         threshold_set = true
         nodes_in_layers_mix = Array(120).fill(1)
+        ancestor_area_number_mix = Array(node.total_layers + 1).fill(1)
         coupon_threshold = guarantee_num
         console.log("Setting the threshold of how many we need to see to", coupon_threshold)
     }
     else if (!threshold_set) {
         threshold_set = true
         nodes_in_layers_mix = Array(120).fill(1)
+        ancestor_area_number_mix = Array(node.total_layers + 1).fill(1)
 
         // use coupon problem to set the threshhold of how many nodes we need to see before we start to empty the queue and draw the rest of the nodes.
         // 100.000 is just a hardcoded value above of how many nodes we have (we have 36.000)
@@ -118,6 +133,7 @@ function draw_node_mix(node) {
     if (nodes_in_layers_mix[node.depth] == 1 && node.depth != 1 ) return 
     if (nodes_visualized_mix > total_nodes_mix * STOP_AFTER_PERC_MIX) return 
 
+    last_area_number_mix = 1
     nodes_visualized_mix++
 
     // defines the current container - the final container is drawn
@@ -146,8 +162,19 @@ function draw_node_mix(node) {
         let current_val = current_interval[1] - current_interval[0]
 
         // break to respect the size/value of the node
-        if (current_val < node_val && ROUND_SIZE_UP)
+        if (current_val < node_val && ROUND_SIZE_UP) {
+            if (node.depth <= last_node_layer_mix) {
+                for (let i = node.depth; i <= node.total_layers; i++) {
+                    ancestor_area_number_mix[i] = 1
+                }
+            }
+            last_node_layer_mix = node.depth
+            if (i < node.depth) {
+                ancestor_area_number_mix[node.depth] = last_area_number_mix
+            }
+
             break 
+        }
 
         // Computes how many areas this layer consists of - ratio between areas we need and areas in the previous layer
         current_layer_areas = Math.ceil(nodes_in_layers_mix[i] / current_layer_areas) + 1
@@ -168,6 +195,15 @@ function draw_node_mix(node) {
             // Computes which area of the current layer the current node should be within
             let area_nr = Math.floor(normalized_interval_start / splits_frac_of_area)
 
+            // for eval.
+            last_area_number_mix = area_nr
+            estimations_made_mix++
+            if (ancestor_area_number_mix[i] != area_nr) {
+                estimations_error_size_mix += Math.abs(ancestor_area_number_mix[i] - area_nr)
+                estimations_weighted_error_size_mix += Math.abs(ancestor_area_number_mix[i] - area_nr) / current_layer_areas
+            }
+
+
             // Computes the new start and finish of the current containers interval
             current_interval[0] += value * area_nr
             current_interval[1] -= (current_layer_areas - 1 - area_nr) * value
@@ -182,6 +218,7 @@ function draw_node_mix(node) {
 
             // Computes which area of the current layer the current node should be within
             area_nr = Math.floor(normalized_interval_start / splits_frac_of_area)
+            last_area_number_mix = area_nr
 
             // Computes the new start and finish of the current containers interval
             current_interval[0] += value * area_nr
@@ -212,5 +249,49 @@ function draw_node_mix(node) {
         current_y,              // y pos
         current_width,          // width
         current_height);        // height 
+
+    // for evaluation
+    seen_mix++
+    let drawn_value_mix = (current_width * current_height) / (view_width * view_height)
+    let wanted_value_mix = node.interval[1] - node.interval[0]
+    total_area_drawn_mix += drawn_value_mix
+    total_wanted_value_mix += wanted_value_mix
+    if (wanted_value_mix > drawn_value_mix) {
+        mean_area_error_mix += wanted_value_mix / drawn_value_mix - 1
+        weighted_mean_area_error_mix += (wanted_value_mix / drawn_value_mix - 1) * wanted_value_mix
+    } else {
+        mean_area_error_mix += drawn_value_mix / wanted_value_mix - 1
+        weighted_mean_area_error_mix += (drawn_value_mix / wanted_value_mix - 1) * wanted_value_mix  
+    }
+
+    mean_ar_mix += current_height > current_width ? current_height / current_width : current_width / current_height
+    weighted_mean_ar_mix += (current_height > current_width ? current_height / current_width : current_width / current_height)*drawn_value_mix
+
+
+    // nodes in first 20 layers: 5735
+            // nodes in first 40 layers: 23659
+            // nodes in first 60 layers: 32979
+            // nodes in first 80 layers: 34857
+            // nodes in first 100 layers: 35675
+            // nodes in all 120 layers: 35960
+    if (seen_mix == 35960) {
+        console.log(`\n********** ESTIMATION for ${seen_mix} nodes **********`)
+        // mean area error: avg. of drawn_area vs correct_area
+        // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
+        console.log(`mean area: 1:${(mean_area_error_mix / seen_mix).toFixed(3)}`)
+        console.log(`weighted mean area: 1:${(weighted_mean_area_error_mix / total_wanted_value_mix).toFixed(3)}`)
+
+        // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
+        // weighted mean estimation error: -||-, but divided by how many areas the layer has
+        console.log(`mean estimation error: ${(estimations_error_size_mix / estimations_made_mix).toFixed(3)}`)
+        console.log(`weighted mean estimation error: ${(estimations_weighted_error_size_mix / estimations_made_mix).toFixed(3)}`)
+
+        // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
+        // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
+        console.log(`mean aspect ratio 1:${(mean_ar_mix / seen_mix).toFixed(3)}`)
+        console.log(`weighted mean aspect ratio 1:${(weighted_mean_ar_mix / total_area_drawn_mix).toFixed(3)}`)
+
     
+        console.log(`*************************************************`)
+    }
 }

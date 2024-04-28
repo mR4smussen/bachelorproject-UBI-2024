@@ -18,7 +18,7 @@ let BACKGROUND_DRAW_sq = false
 let COLOR_LEAFS_sq = false
 
 // LoD - just for testing
-let LAYERS_TO_SHOW_sq = 150
+let LAYERS_TO_SHOW_sq = 120
 
 // how to respect sizes (round up or down)
 const ROUND_SIZE_UP_sq = true
@@ -29,6 +29,7 @@ const USE_THRESHHOLD = false
 
 const MAKE_SQ = false
 
+// for sequencing
 let node_queue_sq = []
 let queue_drawn_sq = false
 let coupon_threshold_sq = Infinity
@@ -38,11 +39,13 @@ let nodes_received_sq = 0
 let nodes_in_layers_sq
 let total_nodes_sq = Infinity
 
-// for finding the average
+// for evaluation
 let seen = 0
 let avg_ratio = 0
+let weighted_avg_ratio = 0
 let undefined_ratios = 0
-let avg_value_error = 0
+let mean_area_error = 0
+let weighted_mean_area_error = 0
 let biggest_value_error = 0
 let avg_value_ratio_error = 0
 let nodes_visualized = 0
@@ -55,6 +58,8 @@ let area_nr_errors = 0
 let estimations_made = 0
 let estimations_error_size = 0
 let estimations_weighted_error_size = 0
+let total_wanted_value = 0
+let total_area_drawn = 0
 
 // used only for testing / screenshots
 const STOP_AFTER_PERC_SQ = 1
@@ -88,11 +93,6 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
                 break;
             }
         }
-    }
-
-    // Gives some controle over level of detail (LoD)
-    if(node.depth > LAYERS_TO_SHOW_sq) {
-        return
     }
     
     // Set the canvas properties once
@@ -129,6 +129,11 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
 }
 
 function draw_node_sq(node) {
+    // Gives some controle over level of detail (LoD)
+    if(node.depth > LAYERS_TO_SHOW_sq) {
+        return
+    }
+
     last_area_number = 1
     if (nodes_in_layers_sq[node.depth] != 1 || node.depth == 1 ) nodes_visualized++
     else {
@@ -201,24 +206,57 @@ function draw_node_sq(node) {
         // print some evaluation stats
         seen++
         drawn_value = (next_width * next_height) / (view_width * view_height)
+        total_area_drawn += drawn_value
         wanted_value = node.interval[1] - node.interval[0]
-        avg_value_error += Math.abs(drawn_value - wanted_value)
+        total_wanted_value += wanted_value
+        if (wanted_value > drawn_value) {
+            mean_area_error += wanted_value / drawn_value - 1
+            weighted_mean_area_error += (wanted_value / drawn_value - 1) * wanted_value
+        } else {
+            mean_area_error += drawn_value / wanted_value - 1
+            weighted_mean_area_error += (drawn_value / wanted_value - 1) * wanted_value  
+        }
         avg_value_ratio_error += Math.abs((wanted_value / drawn_value) - 1)
 
         if (ratio < Infinity) avg_ratio += ratio 
         else undefined_ratios++
-        if (seen == total_nodes_sq) {
-            console.log(`largest value error: ${(biggest_value_error).toFixed(3)}`)
-            console.log(`average value error: ${(avg_value_error / seen).toFixed(5)}`)
-            console.log(`average weighted value error: 1:${(avg_value_ratio_error / seen).toFixed(3)}`)
-            console.log(`average ratio: 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
-            console.log(`nodes visualized: ${nodes_visualized}`)
-            console.log("estimation errors:", area_nr_errors, 
-                        "\ntotal estimations:", estimations_made, 
-                        "\nestimation error percentage:", +((area_nr_errors / estimations_made)*100).toFixed(2),
-                        "\naverage area error:", estimations_error_size / area_nr_errors,
-                        "\naverage weighted error:", estimations_weighted_error_size / area_nr_errors, // not sure to use this or the one below
-                        "\naverage weighted estimation:", estimations_weighted_error_size / estimations_made)
+        
+        weighted_avg_ratio += (next_height > next_width ? next_height / next_width : next_width / next_height)*drawn_value
+
+        // for eval:
+            // nodes in first 20 layers: 5735
+            // nodes in first 40 layers: 23659
+            // nodes in first 60 layers: 32979
+            // nodes in first 80 layers: 34857
+            // nodes in first 100 layers: 35675
+            // nodes in all 120 layers: 35960
+        if (seen == 35960) {
+            // mean area error: avg. of drawn_area vs correct_area
+            // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
+            console.log(`\n********** ESTIMATION for ${seen} nodes **********`)
+            console.log(`mean area: 1:${(mean_area_error / seen).toFixed(3)}`)
+            console.log(`weighted mean area: 1:${(weighted_mean_area_error / total_wanted_value).toFixed(3)}`)
+
+            // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
+            // weighted mean estimation error: -||-, but divided by how many areas the layer has
+            console.log(`mean estimation error: ${(estimations_error_size / estimations_made).toFixed(3)}`)
+            console.log(`weighted mean estimation error: ${(estimations_weighted_error_size / estimations_made).toFixed(3)}`)
+
+            // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
+            // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
+            console.log(`mean aspect ratio 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
+            console.log(`weighted mean aspect ratio 1:${(weighted_avg_ratio / total_area_drawn).toFixed(3)}`)
+
+            console.log(`*************************************************`)
+
+
+            // console.log(`average ratio: 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
+            // console.log(`nodes visualized: ${nodes_visualized}`)
+            // console.log("estimation errors:", area_nr_errors, 
+            //             "\ntotal estimations:", estimations_made, 
+            //             "\nestimation error percentage:", +((area_nr_errors / estimations_made)*100).toFixed(2),
+            //             "\naverage estimation error size:", estimations_error_size / estimations_made,
+            //             "\naverage weighted estimation error:", estimations_weighted_error_size / estimations_made) // not sure to use this or the one below
         }
     }, 0)
 }
@@ -248,7 +286,7 @@ function compute_next_container(node_interval, layer_size, container_interval, c
     last_area_number = area_nr
     estimations_made++
     if (ancestor_area_number[current_layer_depth] != area_nr) {
-        area_nr_errors++
+        // area_nr_errors++
         estimations_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr)
         estimations_weighted_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr) / this_layer_areas
     }
@@ -275,7 +313,7 @@ function compute_next_container(node_interval, layer_size, container_interval, c
                 width_current_stack = current_width / k
                 value_of_stack_width = width_current_stack / container_width
                 height_current_stack = (mean_node_value / value_of_stack_width) * container_height
-                let next_ratio = height_current_stack / width_current_stack
+                let next_ratio = height_current_stack > width_current_stack ? height_current_stack / width_current_stack : width_current_stack / height_current_stack
                 if (Math.abs(next_ratio - 1) > Math.abs(current_ratio - 1) && k >= 2) { // if the ratio got worse -> use the previous stack
                     k-- // we want the previous amount in the stack
                     break
@@ -307,7 +345,7 @@ function compute_next_container(node_interval, layer_size, container_interval, c
                 // we divide the value of the container between the nodes 
                 value_of_stack_height = height_current_stack / container_height
                 width_current_stack = (mean_node_value / value_of_stack_height) * container_width
-                let next_ratio = height_current_stack / width_current_stack
+                let next_ratio = height_current_stack > width_current_stack ? height_current_stack / width_current_stack : width_current_stack / height_current_stack
                 if (Math.abs(next_ratio - 1) > Math.abs(current_ratio - 1) && k >= 2) { // if the ratio got worse -> use the previous stack
                     k-- // we want the previous stack
                     break

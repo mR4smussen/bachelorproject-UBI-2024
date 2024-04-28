@@ -7,6 +7,7 @@ const CANVAS_SIZE_nopv = [2000, 1000]
 // const CANVAS_SIZE_nopv = [1000, 1000] 
 
 // for the evaluation
+let LoD_nopv = 120
 let total_amount_nopv = 0
 let avg_ratio_nopv = 0
 let avg_weighted_ratio_nopv = 0
@@ -115,7 +116,8 @@ class TreeNode {
                             stack_width,         
                             node_height);
 
-                    node.visualize_children(stack_width, node_height, x, next_node_y, node.area)
+                    if (node.depth < LoD_nopv)
+                        node.visualize_children(stack_width, node_height, x, next_node_y, node.area)
                     next_node_y += node_height
 
                     // Evaluation
@@ -148,7 +150,8 @@ class TreeNode {
                         node_width,         
                         stack_height);
                     
-                    node.visualize_children(node_width, stack_height, next_node_x, y, node.area)
+                    if (node.depth < LoD_nopv)
+                        node.visualize_children(node_width, stack_height, next_node_x, y, node.area)
                     next_node_x += node_width
 
                     // for evaluation
