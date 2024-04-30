@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   else if (layoutType == "Icicle") CHART_TYPE = 3
   else if (layoutType == "Slice and Dice") CHART_TYPE = 4
   else if (layoutType == "Squarified")  CHART_TYPE = 5
+  else if (layoutType == "Evaluate") CHART_TYPE = 6
   else return 
 
 
@@ -45,6 +46,9 @@ document.addEventListener("DOMContentLoaded", () => {
           break
         case 5:
           stream_data(lines, CHUNK_SIZE, canvas, add_tree_map_node_mixed_squarified)
+          break
+        case 6:
+          evaluate()
           break
         default:
           console.log(`chart type can not be ${CHART_TYPE} - either pick 0 (sunburst) or 1 (tree map)`)

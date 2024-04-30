@@ -83,8 +83,8 @@ function add_tree_map_node_mixed(node, canvas) {
         for (i = node.total_layers; i <= 100000; i++) {
             if (coupon_problem(node.total_layers, i) >= ACCURACY) {
                 coupon_threshold = i
-                console.log(`We need to see ${i} nodes before we draw any of them.`)
-                console.log(`This gives us >${ACCURACY*100}% chance of having seen all layers`)
+                // console.log(`We need to see ${i} nodes before we draw any of them.`)
+                // console.log(`This gives us >${ACCURACY*100}% chance of having seen all layers`)
                 break;
             }
         }
@@ -132,6 +132,8 @@ function draw_node_mix(node) {
 
     if (nodes_in_layers_mix[node.depth] == 1 && node.depth != 1 ) return 
     if (nodes_visualized_mix > total_nodes_mix * STOP_AFTER_PERC_MIX) return 
+
+    seen_mix++
 
     last_area_number_mix = 1
     nodes_visualized_mix++
@@ -251,7 +253,6 @@ function draw_node_mix(node) {
         current_height);        // height 
 
     // for evaluation
-    seen_mix++
     let drawn_value_mix = (current_width * current_height) / (view_width * view_height)
     let wanted_value_mix = node.interval[1] - node.interval[0]
     total_area_drawn_mix += drawn_value_mix
@@ -274,8 +275,8 @@ function draw_node_mix(node) {
             // nodes in first 80 layers: 34857
             // nodes in first 100 layers: 35675
             // nodes in all 120 layers: 35960
-    if (seen_mix == 35960) {
-        console.log(`\n********** ESTIMATION for ${seen_mix} nodes **********`)
+    if (seen_mix == total_nodes_mix) {
+        console.log(`\n********** Slice&Dice ESTIMATION for ${seen_mix} nodes **********`)
         // mean area error: avg. of drawn_area vs correct_area
         // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
         console.log(`mean area: 1:${(mean_area_error_mix / seen_mix).toFixed(3)}`)
@@ -292,6 +293,6 @@ function draw_node_mix(node) {
         console.log(`weighted mean aspect ratio 1:${(weighted_mean_ar_mix / total_area_drawn_mix).toFixed(3)}`)
 
     
-        console.log(`*************************************************`)
+        console.log(`*******************************************************************`)
     }
 }

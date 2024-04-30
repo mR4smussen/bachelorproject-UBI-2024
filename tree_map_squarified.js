@@ -18,16 +18,14 @@ let BACKGROUND_DRAW_sq = false
 let COLOR_LEAFS_sq = false
 
 // LoD - just for testing
-let LAYERS_TO_SHOW_sq = 120
+let LoD_sq = 120
 
 // how to respect sizes (round up or down)
 const ROUND_SIZE_UP_sq = true
 
-const value_threshhold = 0.00005
+const value_threshhold = 0.0005
 // const value_threshhold = 0.5
 const USE_THRESHHOLD = false
-
-const MAKE_SQ = false
 
 // for sequencing
 let node_queue_sq = []
@@ -46,18 +44,15 @@ let weighted_avg_ratio = 0
 let undefined_ratios = 0
 let mean_area_error = 0
 let weighted_mean_area_error = 0
-let biggest_value_error = 0
-let avg_value_ratio_error = 0
 let nodes_visualized = 0
 
 // for eval.
 let last_area_number = 0 
 let ancestor_area_number = [] // keeps track of which area number a node should pick
 let last_node_layer = 0
-let area_nr_errors = 0
 let estimations_made = 0
 let estimations_error_size = 0
-let estimations_weighted_error_size = 0
+let weighted_estimations_error_size = 0
 let total_wanted_value = 0
 let total_area_drawn = 0
 
@@ -88,8 +83,8 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
         for (i = node.total_layers; i <= 100000; i++) {
             if (coupon_problem(node.total_layers, i) >= ACCURACY_sq) {
                 coupon_threshold_sq = i
-                console.log(`We need to see ${i} nodes before we draw any of them.`)
-                console.log(`This gives us >${ACCURACY_sq*100}% chance of having seen all layers`)
+                // console.log(`We need to see ${i} nodes before we draw any of them.`)
+                // console.log(`This gives us >${ACCURACY_sq*100}% chance of having seen all layers`)
                 break;
             }
         }
@@ -130,7 +125,7 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
 
 function draw_node_sq(node) {
     // Gives some controle over level of detail (LoD)
-    if(node.depth > LAYERS_TO_SHOW_sq) {
+    if(node.depth > LoD_sq) {
         return
     }
 
@@ -142,6 +137,7 @@ function draw_node_sq(node) {
     } 
     if (nodes_visualized > total_nodes_sq * STOP_AFTER_PERC_SQ) return 
     setTimeout(() => {
+        seen++
         let i = 1
         let current_interval = [0,1]
         let prev_layer_areas = 1
@@ -152,6 +148,8 @@ function draw_node_sq(node) {
         let prev_area_val = 1
         let ratio = view_height / view_width
         let next_value = 1
+
+        // locate where to draw this node
         while (node.interval[1] - node.interval[0] < next_value && i < node.depth) {
             if (nodes_in_layers_sq[i] == 1 && i != 1) {
                 i++
@@ -173,10 +171,9 @@ function draw_node_sq(node) {
             ancestor_area_number[node.depth] = last_area_number
         }
 
-        if ((Math.abs(ratio - 1) < 1 || !MAKE_SQ) && (node.interval[1] - node.interval[0] > value_threshhold || !USE_THRESHHOLD)) {
+        // draw the nodes
+        if (node.interval[1] - node.interval[0] > value_threshhold || !USE_THRESHHOLD) {
             ctx.strokeStyle = get_color(node.colorNr, node.depth, true);
-            // ctx.strokeStyle = get_color(2, node.depth, true);
-            // ctx.lineWidth = 1;
             ctx.lineWidth = 10 * (Math.min(0.2, 10 / node.depth));
             ctx.strokeRect(
                 next_x,              // x pos
@@ -193,18 +190,7 @@ function draw_node_sq(node) {
                 next_height);        // height 
         }
 
-        // just for evaluation
-        // if (node.isLeaf) {
-        //     ctx.fillStyle = get_color(node.colorNr, node.depth, true);
-        //     ctx.fillRect(
-        //         next_x,              // x pos
-        //         next_y,              // y pos
-        //         next_width,          // width
-        //         next_height);        // height
-        // }
-
         // print some evaluation stats
-        seen++
         drawn_value = (next_width * next_height) / (view_width * view_height)
         total_area_drawn += drawn_value
         wanted_value = node.interval[1] - node.interval[0]
@@ -216,12 +202,13 @@ function draw_node_sq(node) {
             mean_area_error += drawn_value / wanted_value - 1
             weighted_mean_area_error += (drawn_value / wanted_value - 1) * wanted_value  
         }
-        avg_value_ratio_error += Math.abs((wanted_value / drawn_value) - 1)
 
         if (ratio < Infinity) avg_ratio += ratio 
         else undefined_ratios++
         
-        weighted_avg_ratio += (next_height > next_width ? next_height / next_width : next_width / next_height)*drawn_value
+        weighted_avg_ratio += (next_height > next_width ? 
+                                next_height / next_width : 
+                                next_width / next_height) * drawn_value
 
         // for eval:
             // nodes in first 20 layers: 5735
@@ -230,17 +217,18 @@ function draw_node_sq(node) {
             // nodes in first 80 layers: 34857
             // nodes in first 100 layers: 35675
             // nodes in all 120 layers: 35960
-        if (seen == 35960) {
+        if (seen == total_nodes_sq) {
+            console.log(`\n********** Squarified ESTIMATION for ${seen} nodes **********`)
+
             // mean area error: avg. of drawn_area vs correct_area
             // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
-            console.log(`\n********** ESTIMATION for ${seen} nodes **********`)
             console.log(`mean area: 1:${(mean_area_error / seen).toFixed(3)}`)
             console.log(`weighted mean area: 1:${(weighted_mean_area_error / total_wanted_value).toFixed(3)}`)
 
             // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
             // weighted mean estimation error: -||-, but divided by how many areas the layer has
             console.log(`mean estimation error: ${(estimations_error_size / estimations_made).toFixed(3)}`)
-            console.log(`weighted mean estimation error: ${(estimations_weighted_error_size / estimations_made).toFixed(3)}`)
+            console.log(`weighted mean estimation error: ${(weighted_estimations_error_size / estimations_made).toFixed(3)}`)
 
             // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
             // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
@@ -248,15 +236,6 @@ function draw_node_sq(node) {
             console.log(`weighted mean aspect ratio 1:${(weighted_avg_ratio / total_area_drawn).toFixed(3)}`)
 
             console.log(`*************************************************`)
-
-
-            // console.log(`average ratio: 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
-            // console.log(`nodes visualized: ${nodes_visualized}`)
-            // console.log("estimation errors:", area_nr_errors, 
-            //             "\ntotal estimations:", estimations_made, 
-            //             "\nestimation error percentage:", +((area_nr_errors / estimations_made)*100).toFixed(2),
-            //             "\naverage estimation error size:", estimations_error_size / estimations_made,
-            //             "\naverage weighted estimation error:", estimations_weighted_error_size / estimations_made) // not sure to use this or the one below
         }
     }, 0)
 }
@@ -288,7 +267,7 @@ function compute_next_container(node_interval, layer_size, container_interval, c
     if (ancestor_area_number[current_layer_depth] != area_nr) {
         // area_nr_errors++
         estimations_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr)
-        estimations_weighted_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr) / this_layer_areas
+        weighted_estimations_error_size += Math.abs(ancestor_area_number[current_layer_depth] - area_nr) / this_layer_areas
     }
 
     // The desired volume of the final container compared to the root container
