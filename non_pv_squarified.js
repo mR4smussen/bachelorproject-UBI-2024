@@ -13,6 +13,13 @@ let avg_ratio_nopv = 0
 let avg_weighted_ratio_nopv = 0
 let total_area = 0
 
+// for eval when running multiple tests
+is_running_multiple_tests_nopv = false
+current_variance_nopv = 0
+let amounts_of_variances_nopv = new Map()
+let mean_ar_for_variances_nopv = new Map()
+let weighted_mean_ar_for_variances_nopv = new Map()
+
 class TreeNode {
   constructor() {
     this.children = [];
@@ -186,10 +193,40 @@ function visualize_non_pv_node(width, height, x, y, parent_area, this_node, tota
         children_visualized += current_stack_size
     }
     if (total_nodes_non_pv != 0 && total_amount_nopv == total_nodes_non_pv - 1) {
-        console.log(`\n********** Non-PV Squarified ESTIMATION for ${total_amount_nopv+1} nodes **********`)
-        console.log(`mean aspect ratio: 1:${(avg_ratio_nopv / total_amount_nopv).toFixed(3)}`)
-        console.log(`weighted mean aspect ratio: 1:${(avg_weighted_ratio_nopv / all_nodes_area).toFixed(3)}`)
-        console.log(`*******************************************************************`)
+        if (is_running_multiple_tests_nopv) {
+            let rounded_variance = Math.round(current_variance_nopv); 
+            if (!amounts_of_variances_nopv.get(rounded_variance)) {
+                amounts_of_variances_nopv.set(rounded_variance, 0);
+                mean_ar_for_variances_nopv.set(rounded_variance, 0);
+                weighted_mean_ar_for_variances_nopv.set(rounded_variance, 0);
+            }
+
+            amounts_of_variances_nopv.set(rounded_variance, amounts_of_variances_nopv.get(rounded_variance) + 1)
+
+            mean_ar_for_variances_nopv.set(rounded_variance, 
+                mean_ar_for_variances_nopv.get(rounded_variance) + (avg_ratio_nopv / total_amount_nopv))
+            weighted_mean_ar_for_variances_nopv.set(rounded_variance, 
+                weighted_mean_ar_for_variances_nopv.get(rounded_variance) + (avg_weighted_ratio_nopv / all_nodes_area))
+            console.log("all nodes area:", all_nodes_area)
+
+            console.log(`\n********** PRINTING STATS FOR THE TRADITIONAL SQUARIFIED TECHNIQUE **********`)
+            for (let [key, value] of amounts_of_variances_nopv) {
+                console.log("variance:", key, "amount:", value)
+                console.log("mean AR for variance: " + key + " is " + mean_ar_for_variances_nopv.get(key) / value);
+                console.log("mean weighted AR for variance: " + key + " is " + weighted_mean_ar_for_variances_nopv.get(key) / value);
+            }
+
+        } else {
+            console.log(`\n********** Non-PV Squarified ESTIMATION for ${total_amount_nopv+1} nodes **********`)
+            console.log(`mean aspect ratio: 1:${(avg_ratio_nopv / total_amount_nopv).toFixed(3)}`)
+            console.log(`weighted mean aspect ratio: 1:${(avg_weighted_ratio_nopv / all_nodes_area).toFixed(3)}`)
+            console.log(`*******************************************************************`)
+        }
+
+        total_amount_nopv = 0
+        avg_ratio_nopv = 0
+        avg_weighted_ratio_nopv = 0
+        total_area = 0
     }
 }
 
@@ -238,7 +275,7 @@ if (ON) {
         tree.buildTree(connections); // we build the tree top-down
         tree.root.set_area()
         visualize_non_pv_node(canvas.width, canvas.height, 0, 0, tree.root.area, tree.root)
-        console.log(`\n********** Non-PV Squarified ESTIMATION for ${seen_mix} nodes **********`)
+        console.log(`\n********** Non-PV Squarified ESTIMATION for ${total_amount_nopv} nodes **********`)
         console.log(`mean aspect ratio: 1:${(avg_ratio_nopv / total_amount_nopv).toFixed(3)}`)
         console.log(`weighted mean aspect ratio: 1:${(avg_weighted_ratio_nopv / total_area).toFixed(3)}`)
         console.log(`**************************************************************************`)

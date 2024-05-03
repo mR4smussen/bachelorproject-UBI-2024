@@ -1,3 +1,6 @@
+// flag for running the balanced (true) or unbalanced (false) tests
+let RUN_BALANCED_TESTS = false
+
 let ROOT_INTERVAL_SIZE = 0;
 let nodes_in_layers;
 let total_area_eval = 0
@@ -23,6 +26,7 @@ class Tree_builder {
     }
   
     build_balanced_tree() {
+      total_area_eval = 0;
       const tree_nodes = [];
       let leaves_before = [];
       this.root = new TreeNode_builder();
@@ -53,6 +57,7 @@ class Tree_builder {
     // builds a tree where each node has a `leaf_chance` chance of being a leaf
     // and then an even probability to have between 2 and `max_children` children.   
     build_unbalanced_tree(leaf_chance, max_children) {
+      total_area_eval = 0;
       const tree_nodes = [];
       let leaves_before = [];
       this.root = new TreeNode_builder();
@@ -195,44 +200,44 @@ function generate_unbalanced_tree(total_nodes, leaf_chance, max_children) {
 
 
 function evaluate() {
+  // unbalanced tree test
+  function run_unbalanced_test() {
+    // 0-0.5 probability for a node to be a leaf
+    // each node can have between 2-(random between 2 and 9) children
+    let [unbalanced_tree_as_string_array, unbalanced_tree] = generate_unbalanced_tree(50000, Math.random() / 2, Math.floor(Math.random() * (10 - 1)) + 3)
 
+    let nodes_not_in_final_layer = nodes_in_layers.slice(1, -1).reduce((sum, layer_size) => { return sum + layer_size },0);
+
+    while (nodes_children.length < nodes_not_in_final_layer) nodes_children.push(0)
+
+    let avg_children_amount = nodes_children.reduce((sum, children_amount) => { return sum + children_amount },0) / nodes_children.length;
+    
+    // variance = 1 / n sum((x - mean)^2)
+    let variance = nodes_children.reduce((sum, children_amount) => { return sum + (children_amount - avg_children_amount) ** 2 },0) / nodes_children.length;
+    nodes_children = []
+    current_variance_sq = variance
+    current_variance_mix = variance
+    current_variance_nopv = variance
+    stream_data(unbalanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed_squarified)
+    stream_data(unbalanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed)
+    visualize_non_pv_node(canvas.width, canvas.height, 0, 0, unbalanced_tree.root.area, unbalanced_tree.root, total_nodes_eval, total_area_eval)
+  }
+
+  if (RUN_BALANCED_TESTS) {
     // balanced tree test
-    // const canvas = document.getElementById("sunburstCanvas");
-    // let [balanced_tree_as_string_array, balanced_tree] = generate_balanced_tree(50000, 2)
-    // console.log(`\n~~~~~~~~~~~~ Testing tree of size ${balanced_tree.size} with branch factor ${balanced_tree.branch_factor} ~~~~~~~~~~~~`)
-    // stream_data(balanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed_squarified)
-    // stream_data(balanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed)
-    // visualize_non_pv_node(canvas.width, canvas.height, 0, 0, balanced_tree.root.area, balanced_tree.root, total_nodes_eval, total_area_eval)
-
-
-    // unbalanced tree test
-    function run_unbalanced_test() {
-      // 0-0.5 probability for a node to be a leaf
-      // each node can have between 2-(random between 2 and 9) children
-      let [unbalanced_tree_as_string_array, unbalanced_tree] = generate_unbalanced_tree(100, Math.random() / 2, Math.floor(Math.random() * (10 - 1)) + 3)
-
-      let nodes_not_in_final_layer = nodes_in_layers.slice(1, -1).reduce((sum, layer_size) => { return sum + layer_size },0);
-
-      while (nodes_children.length < nodes_not_in_final_layer) nodes_children.push(0)
-
-      let avg_children_amount = nodes_children.reduce((sum, children_amount) => { return sum + children_amount },0) / nodes_children.length;
-      
-      // variance = 1 / n sum((x - mean)^2)
-      let variance = nodes_children.reduce((sum, children_amount) => { return sum + (children_amount - avg_children_amount) ** 2 },0) / nodes_children.length;
-      nodes_children = []
-      current_variance_sq = variance
-      current_variance_mix = variance
-      // console.log("variance:", variance)
-      stream_data(unbalanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed_squarified)
-      stream_data(unbalanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed)
-      visualize_non_pv_node(canvas.width, canvas.height, 0, 0, unbalanced_tree.root.area, unbalanced_tree.root, total_nodes_eval, total_area_eval)
-    }
-
+    const canvas = document.getElementById("sunburstCanvas");
+    let [balanced_tree_as_string_array, balanced_tree] = generate_balanced_tree(50000, 2)
+    console.log(`\n~~~~~~~~~~~~ Testing tree of size ${balanced_tree.size} with branch factor ${balanced_tree.branch_factor} ~~~~~~~~~~~~`)
+    stream_data(balanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed_squarified)
+    stream_data(balanced_tree_as_string_array, 100, canvas, add_tree_map_node_mixed)
+    visualize_non_pv_node(canvas.width, canvas.height, 0, 0, balanced_tree.root.area, balanced_tree.root, total_nodes_eval, total_area_eval)
+  } else {
     let count = 0;
-    let times = 50;
-    let delay = 500; // 60s
+    let times = 150;
+    let delay = 60000; // 60s
     is_running_multiple_tests_sq = true;
     is_running_multiple_tests_mix = true;
+    is_running_multiple_tests_nopv = true;
     run_unbalanced_test();
     let interval = setInterval(() => { 
       run_unbalanced_test();
@@ -246,6 +251,7 @@ function evaluate() {
         console.log("\n************ RUNNING ITERATION " + (count + 1) + " ************")
 
     }, delay);
+  }
 }
 
 // evaluate();
