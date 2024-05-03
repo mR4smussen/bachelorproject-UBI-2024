@@ -58,6 +58,17 @@ let estimations_weighted_error_size_mix = 0
 let weighted_mean_area_error_mix = 0
 let total_wanted_value_mix = 0
 
+// for eval when running multiple tests
+is_running_multiple_tests_mix = false
+current_variance_mix = 0
+let amounts_of_variances_mix = new Map()
+let mean_ar_for_variances_mix = new Map()
+let weighted_mean_ar_for_variances_mix = new Map()
+let mean_area_error_for_variances_mix = new Map()
+let weighted_mean_area_error_for_variances_mix = new Map()
+let mean_estimation_error_for_variances_mix = new Map()
+let weighted_mean_estimation_error_for_variances_mix = new Map()
+
 // independent visualization of a single node
 function add_tree_map_node_mixed(node, canvas) {
 
@@ -115,7 +126,7 @@ function add_tree_map_node_mixed(node, canvas) {
 
     if (nodes_received >= coupon_threshold) {
         draw_node_mix(node)
-        if (!queue_drawn) {
+        if (!queue_drawn && nodes_received >= coupon_threshold) {
             queue_drawn = true
             total_nodes_mix = nodes_in_layers_mix.reduce((accumulator, currentValue) => currentValue != 1 ? accumulator + currentValue : accumulator, 1);
             node_queue.forEach(node => draw_node_mix(node))
@@ -130,9 +141,9 @@ function add_tree_map_node_mixed(node, canvas) {
 
 function draw_node_mix(node) {
 
-    if (nodes_in_layers_mix[node.depth] == 1 && node.depth != 1 ) return 
-    if (nodes_visualized_mix > total_nodes_mix * STOP_AFTER_PERC_MIX) return 
-
+    if (nodes_in_layers_mix[node.depth] == 1 && node.depth != 1 ) return
+    if (nodes_visualized_mix > total_nodes_mix * STOP_AFTER_PERC_MIX) return
+    
     seen_mix++
 
     last_area_number_mix = 1
@@ -179,7 +190,7 @@ function draw_node_mix(node) {
         }
 
         // Computes how many areas this layer consists of - ratio between areas we need and areas in the previous layer
-        current_layer_areas = Math.ceil(nodes_in_layers_mix[i] / current_layer_areas) + 1
+        current_layer_areas = Math.ceil(nodes_in_layers_mix[i] / current_layer_areas)
 
         // Computes the interval fraction of a single area for this layer
         let splits_frac_of_area = 1 / current_layer_areas
@@ -276,23 +287,84 @@ function draw_node_mix(node) {
             // nodes in first 100 layers: 35675
             // nodes in all 120 layers: 35960
     if (seen_mix == total_nodes_mix) {
-        console.log(`\n********** Slice&Dice ESTIMATION for ${seen_mix} nodes **********`)
-        // mean area error: avg. of drawn_area vs correct_area
-        // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
-        console.log(`mean area: 1:${(mean_area_error_mix / seen_mix).toFixed(3)}`)
-        console.log(`weighted mean area: 1:${(weighted_mean_area_error_mix / total_wanted_value_mix).toFixed(3)}`)
+        if (is_running_multiple_tests_mix) {
+            let rounded_variance = Math.round(current_variance_mix); 
+            if (!amounts_of_variances_mix.get(rounded_variance)) {
+                amounts_of_variances_mix.set(rounded_variance, 0);
+                mean_area_error_for_variances_mix.set(rounded_variance, 0);
+                weighted_mean_area_error_for_variances_mix.set(rounded_variance, 0);
+                mean_estimation_error_for_variances_mix.set(rounded_variance, 0);
+                weighted_mean_estimation_error_for_variances_mix.set(rounded_variance, 0);
+                mean_ar_for_variances_mix.set(rounded_variance, 0);
+                weighted_mean_ar_for_variances_mix.set(rounded_variance, 0);
+            }
 
-        // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
-        // weighted mean estimation error: -||-, but divided by how many areas the layer has
-        console.log(`mean estimation error: ${(estimations_error_size_mix / estimations_made_mix).toFixed(3)}`)
-        console.log(`weighted mean estimation error: ${(estimations_weighted_error_size_mix / estimations_made_mix).toFixed(3)}`)
+            amounts_of_variances_mix.set(rounded_variance, amounts_of_variances_mix.get(rounded_variance) + 1)
+            mean_area_error_for_variances_mix.set(rounded_variance, 
+                mean_area_error_for_variances_mix.get(rounded_variance) + (mean_area_error_mix / nodes_visualized_mix))
+            weighted_mean_area_error_for_variances_mix.set(rounded_variance, 
+                weighted_mean_area_error_for_variances_mix.get(rounded_variance) + (weighted_mean_area_error_mix / total_wanted_value_mix))
 
-        // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
-        // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
-        console.log(`mean aspect ratio 1:${(mean_ar_mix / seen_mix).toFixed(3)}`)
-        console.log(`weighted mean aspect ratio 1:${(weighted_mean_ar_mix / total_area_drawn_mix).toFixed(3)}`)
+            mean_estimation_error_for_variances_mix.set(rounded_variance, 
+                mean_estimation_error_for_variances_mix.get(rounded_variance) + (estimations_error_size_mix / estimations_made_mix))
+            weighted_mean_estimation_error_for_variances_mix.set(rounded_variance, 
+                weighted_mean_estimation_error_for_variances_mix.get(rounded_variance) + (estimations_weighted_error_size_mix / estimations_made_mix))
 
-    
-        console.log(`*******************************************************************`)
+            mean_ar_for_variances_mix.set(rounded_variance, 
+                mean_ar_for_variances_mix.get(rounded_variance) + (mean_ar_mix / nodes_visualized_mix))
+            weighted_mean_ar_for_variances_mix.set(rounded_variance, 
+                weighted_mean_ar_for_variances_mix.get(rounded_variance) + (weighted_mean_ar_mix / total_area_drawn_mix))
+
+            console.log(`\n********** PRINTING STATS FOR THE PROGRESSIVE SLICE&DICE TECHNIQUE **********`)
+            for (let [key, value] of amounts_of_variances_mix) {
+                console.log("variance:", key, "amount:", value)
+                console.log("mean area error for variance: " + key + " is " + mean_area_error_for_variances_mix.get(key) / value);
+                console.log("mean weighted area error for variance: " + key + " is " + weighted_mean_area_error_for_variances_mix.get(key) / value);
+                console.log("mean estimation error for variance: " + key + " is " + mean_estimation_error_for_variances_mix.get(key) / value);
+                console.log("mean weighted estimation error for variance: " + key + " is " + weighted_mean_estimation_error_for_variances_mix.get(key) / value)
+                console.log("mean AR for variance: " + key + " is " + mean_ar_for_variances_mix.get(key) / value);
+                console.log("mean weighted AR for variance: " + key + " is " + weighted_mean_ar_for_variances_mix.get(key) / value);
+            }
+
+
+        } else {
+            console.log(`\n********** Slice&Dice ESTIMATION for ${seen_mix} nodes **********`)
+            // mean area error: avg. of drawn_area vs correct_area
+            // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
+            console.log(`mean area: 1:${(mean_area_error_mix / nodes_visualized_mix).toFixed(3)}`)
+            console.log(`weighted mean area: 1:${(weighted_mean_area_error_mix / total_wanted_value_mix).toFixed(3)}`)
+
+            // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
+            // weighted mean estimation error: -||-, but divided by how many areas the layer has
+            console.log(`mean estimation error: ${(estimations_error_size_mix / estimations_made_mix).toFixed(3)}`)
+            console.log(`weighted mean estimation error: ${(estimations_weighted_error_size_mix / estimations_made_mix).toFixed(3)}`)
+
+            // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
+            // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
+            console.log(`mean aspect ratio 1:${(mean_ar_mix / nodes_visualized_mix).toFixed(3)}`)
+            console.log(`weighted mean aspect ratio 1:${(weighted_mean_ar_mix / total_area_drawn_mix).toFixed(3)}`)
+
+            console.log(`*******************************************************************`)
+        }
+
+        // reset values so we can run the visualization again
+        node_queue = []
+        queue_drawn = false
+        nodes_received = 0
+        nodes_in_layers_mix = Array(120).fill(1)
+        nodes_visualized_mix = 0
+        last_area_number_mix = 0 
+        ancestor_area_number_mix = []
+        seen_mix = 0
+        last_node_layer_mix = 0
+        mean_ar_mix = 0
+        weighted_mean_ar_mix = 0
+        total_area_drawn_mix = 0
+        mean_area_error_mix = 0
+        estimations_made_mix = 0
+        estimations_error_size_mix = 0
+        estimations_weighted_error_size_mix = 0
+        weighted_mean_area_error_mix = 0
+        total_wanted_value_mix = 0
     }
 }

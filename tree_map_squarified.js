@@ -56,6 +56,17 @@ let weighted_estimations_error_size = 0
 let total_wanted_value = 0
 let total_area_drawn = 0
 
+// for eval when running multiple tests
+is_running_multiple_tests_sq = false
+current_variance_sq = 0
+let amounts_of_variances_sq = new Map()
+let mean_ar_for_variances_sq = new Map()
+let weighted_mean_ar_for_variances_sq = new Map()
+let mean_area_error_for_variances_sq = new Map()
+let weighted_mean_area_error_for_variances_sq = new Map()
+let mean_estimation_error_for_variances_sq = new Map()
+let weighted_mean_estimation_error_for_variances_sq = new Map()
+
 // used only for testing / screenshots
 const STOP_AFTER_PERC_SQ = 1
 
@@ -83,8 +94,8 @@ function add_tree_map_node_mixed_squarified(node, canvas) {
         for (i = node.total_layers; i <= 100000; i++) {
             if (coupon_problem(node.total_layers, i) >= ACCURACY_sq) {
                 coupon_threshold_sq = i
-                // console.log(`We need to see ${i} nodes before we draw any of them.`)
-                // console.log(`This gives us >${ACCURACY_sq*100}% chance of having seen all layers`)
+                    // console.log(`We need to see ${i} nodes before we draw any of them.`)
+                    // console.log(`This gives us >${ACCURACY_sq*100}% chance of having seen all layers`)
                 break;
             }
         }
@@ -218,24 +229,87 @@ function draw_node_sq(node) {
             // nodes in first 100 layers: 35675
             // nodes in all 120 layers: 35960
         if (seen == total_nodes_sq) {
-            console.log(`\n********** Squarified ESTIMATION for ${seen} nodes **********`)
+            if (is_running_multiple_tests_sq) {
+                let rounded_variance = Math.round(current_variance_sq); 
+                if (!amounts_of_variances_sq.get(rounded_variance)) {
+                    amounts_of_variances_sq.set(rounded_variance, 0);
+                    mean_area_error_for_variances_sq.set(rounded_variance, 0);
+                    weighted_mean_area_error_for_variances_sq.set(rounded_variance, 0);
+                    mean_estimation_error_for_variances_sq.set(rounded_variance, 0);
+                    weighted_mean_estimation_error_for_variances_sq.set(rounded_variance, 0);
+                    mean_ar_for_variances_sq.set(rounded_variance, 0);
+                    weighted_mean_ar_for_variances_sq.set(rounded_variance, 0);
+                }
+                
+                amounts_of_variances_sq.set(rounded_variance, amounts_of_variances_sq.get(rounded_variance) + 1)
+                mean_area_error_for_variances_sq.set(rounded_variance, 
+                    mean_area_error_for_variances_sq.get(rounded_variance) + (mean_area_error / seen))
+                weighted_mean_area_error_for_variances_sq.set(rounded_variance, 
+                    weighted_mean_area_error_for_variances_sq.get(rounded_variance) + (weighted_mean_area_error / total_wanted_value))
+    
+                mean_estimation_error_for_variances_sq.set(rounded_variance, 
+                    mean_estimation_error_for_variances_sq.get(rounded_variance) + (estimations_error_size / estimations_made))
+                weighted_mean_estimation_error_for_variances_sq.set(rounded_variance, 
+                    weighted_mean_estimation_error_for_variances_sq.get(rounded_variance) + (weighted_estimations_error_size / estimations_made))
+    
+                mean_ar_for_variances_sq.set(rounded_variance, 
+                    mean_ar_for_variances_sq.get(rounded_variance) + (avg_ratio / (seen - undefined_ratios)))
+                weighted_mean_ar_for_variances_sq.set(rounded_variance, 
+                    weighted_mean_ar_for_variances_sq.get(rounded_variance) + (weighted_avg_ratio / total_area_drawn))
 
-            // mean area error: avg. of drawn_area vs correct_area
-            // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
-            console.log(`mean area: 1:${(mean_area_error / seen).toFixed(3)}`)
-            console.log(`weighted mean area: 1:${(weighted_mean_area_error / total_wanted_value).toFixed(3)}`)
+                console.log(`\n********** PRINTING STATS FOR THE PROGRESSIVE SQUARIFIED TECHNIQUE **********`)
+                for (let [key, value] of amounts_of_variances_sq) {
+                    console.log("variance:", key, "amount:", value)
+                    console.log("mean area error for variance: " + key + " is " + mean_area_error_for_variances_sq.get(key) / value);
+                    console.log("mean weighted area error for variance: " + key + " is " + weighted_mean_area_error_for_variances_sq.get(key) / value);
+                    console.log("mean estimation error for variance: " + key + " is " + mean_estimation_error_for_variances_sq.get(key) / value);
+                    console.log("mean weighted estimation error for variance: " + key + " is " + weighted_mean_estimation_error_for_variances_sq.get(key) / value)
+                    console.log("mean AR for variance: " + key + " is " + mean_ar_for_variances_sq.get(key) / value);
+                    console.log("mean weighted AR for variance: " + key + " is " + weighted_mean_ar_for_variances_sq.get(key) / value);
+                }
 
-            // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
-            // weighted mean estimation error: -||-, but divided by how many areas the layer has
-            console.log(`mean estimation error: ${(estimations_error_size / estimations_made).toFixed(3)}`)
-            console.log(`weighted mean estimation error: ${(weighted_estimations_error_size / estimations_made).toFixed(3)}`)
+            } else {
+                console.log(`\n********** Squarified ESTIMATION for ${seen} nodes **********`)
+                // mean area error: avg. of drawn_area vs correct_area
+                // weighted mean area error: mean area error weighted with the correct size, so errors for large squares weight more.
+                console.log(`mean area: 1:${(mean_area_error / seen).toFixed(3)}`)
+                console.log(`weighted mean area: 1:${(weighted_mean_area_error / total_wanted_value).toFixed(3)}`)
 
-            // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
-            // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
-            console.log(`mean aspect ratio 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
-            console.log(`weighted mean aspect ratio 1:${(weighted_avg_ratio / total_area_drawn).toFixed(3)}`)
+                // mean estimation error: We estimate which container to pick when doing logically traversal. This is the avg. of how far off the correct pick we are 
+                // weighted mean estimation error: -||-, but divided by how many areas the layer has
+                console.log(`mean estimation error: ${(estimations_error_size / estimations_made).toFixed(3)}`)
+                console.log(`weighted mean estimation error: ${(weighted_estimations_error_size / estimations_made).toFixed(3)}`)
 
-            console.log(`*************************************************`)
+                // mean aspect ratio: the avg. ratio (the long side divided by the short side) of each rectangle
+                // weighted mean aspect ratio: -||-, but multiplied by how large of a portion of the entire canvas the rectangles takes up.
+                console.log(`mean aspect ratio 1:${(avg_ratio / (seen - undefined_ratios)).toFixed(3)}`)
+                console.log(`weighted mean aspect ratio 1:${(weighted_avg_ratio / total_area_drawn).toFixed(3)}`)
+
+                console.log(`*************************************************`)
+            }
+
+            // reset values so we can run the visualization again
+            node_queue_sq = []
+            queue_drawn_sq = false
+            coupon_threshold_sq = Infinity
+            threshold_set_sq = false
+            nodes_received_sq = 0
+            seen = 0
+            avg_ratio = 0
+            weighted_avg_ratio = 0
+            undefined_ratios = 0
+            mean_area_error = 0
+            weighted_mean_area_error = 0
+            nodes_visualized = 0
+            last_area_number = 0 
+            ancestor_area_number = [] 
+            last_node_layer = 0
+            estimations_made = 0
+            estimations_error_size = 0
+            weighted_estimations_error_size = 0
+            total_wanted_value = 0
+            total_area_drawn = 0
+
         }
     }, 0)
 }

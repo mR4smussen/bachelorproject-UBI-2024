@@ -1,7 +1,10 @@
 function get_color(colorNr, depth, lighten) {
     // const base_colors = ["#3498db", "#2ecc71", "#e74c3c", "#f39c12", "#9b59b6", "#1abc9c", "#ff00ea", "#d35400", "#c0392b", "#e16c18"];
     const base_colors = ["#69ef7b", "#830c6f", "#c5df72", "#155392", "#05cfc0", "#1c35b7", "#fc99d5", "#368741", "#5eb3ea"];
-    const color = base_colors[colorNr % 9];
+    // const base_colors = ["#2d3155", "#543786", "#a7b5fe", "#d4dff0", "#7bb8c0", "#ffebad", "#feb737"]
+    
+    
+    const color = base_colors[colorNr % 7];
     if (!lighten)
       return color
     const adjustedColor = lightenColor(color, (depth < 40 ? depth : 40));
