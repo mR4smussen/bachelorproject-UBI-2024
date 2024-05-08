@@ -66,6 +66,12 @@ let mean_area_error_for_variances_sq = new Map()
 let weighted_mean_area_error_for_variances_sq = new Map()
 let mean_estimation_error_for_variances_sq = new Map()
 let weighted_mean_estimation_error_for_variances_sq = new Map()
+let SD_ar_for_variances_sq = new Map() // maps each variance to a list of the means, so that we can compute the SD
+let SD_weighted_ar_for_variances_sq = new Map()
+let SD_area_for_variances_sq = new Map() // maps each variance to a list of the area errors, so that we can compute the SD
+let SD_weighted_area_for_variances_sq = new Map()
+let SD_estimation_for_variances_sq = new Map() // maps each variance to a list of the estimation errors, so that we can compute the SD
+let SD_weighted_estimation_for_variances_sq = new Map()
 
 // used only for testing / screenshots
 const STOP_AFTER_PERC_SQ = 1
@@ -185,6 +191,7 @@ function draw_node_sq(node) {
         // draw the nodes
         if (node.interval[1] - node.interval[0] > value_threshhold || !USE_THRESHHOLD) {
             ctx.strokeStyle = get_color(node.colorNr, node.depth, true);
+            // ctx.strokeStyle = "black";
             ctx.lineWidth = 10 * (Math.min(0.2, 10 / node.depth));
             ctx.strokeRect(
                 next_x,              // x pos
@@ -193,7 +200,8 @@ function draw_node_sq(node) {
                 next_height);        // height 
 
             ctx.strokeStyle = "black";
-            ctx.lineWidth = 0.5
+            // ctx.lineWidth = 0.5;
+            ctx.lineWidth = 8 * (Math.min(0.2, 10 / node.depth));
             ctx.strokeRect( 
                 next_x,              // x pos
                 next_y,              // y pos
@@ -212,6 +220,16 @@ function draw_node_sq(node) {
         } else {
             mean_area_error += drawn_value / wanted_value - 1
             weighted_mean_area_error += (drawn_value / wanted_value - 1) * wanted_value  
+        }
+
+        // fill used for good example graph
+        if (node.isLeaf && node.depth > 8) {
+            ctx.fillStyle = get_color(node.colorNr, node.depth, true);
+            ctx.fillRect(
+                next_x,              // x pos
+                next_y,              // y pos
+                next_width,          // width
+                next_height);        // height 
         }
 
         if (ratio < Infinity) avg_ratio += ratio 
@@ -256,16 +274,100 @@ function draw_node_sq(node) {
                     mean_ar_for_variances_sq.get(rounded_variance) + (avg_ratio / (seen - undefined_ratios)))
                 weighted_mean_ar_for_variances_sq.set(rounded_variance, 
                     weighted_mean_ar_for_variances_sq.get(rounded_variance) + (weighted_avg_ratio / total_area_drawn))
+                
+                // SD for the AR
+                if (SD_ar_for_variances_sq.get(rounded_variance)) {
+                    let SD_ar_list = SD_ar_for_variances_sq.get(rounded_variance)
+                    SD_ar_list.push(avg_ratio / (seen - undefined_ratios))
+                    SD_ar_for_variances_sq.set(rounded_variance, SD_ar_list)
+                } else 
+                    SD_ar_for_variances_sq.set(rounded_variance, [avg_ratio / (seen - undefined_ratios)])
+                
+
+                // SD for the weighted AR
+                if (SD_weighted_ar_for_variances_sq.get(rounded_variance)) {
+                    let SD_weighted_ar_list = SD_weighted_ar_for_variances_sq.get(rounded_variance)
+                    SD_weighted_ar_list.push(weighted_avg_ratio / total_area_drawn)
+                    SD_weighted_ar_for_variances_sq.set(rounded_variance, SD_weighted_ar_list)
+                } else 
+                    SD_weighted_ar_for_variances_sq.set(rounded_variance, [weighted_avg_ratio / total_area_drawn])
+
+                // SD for the area
+                if (SD_area_for_variances_sq.get(rounded_variance)) {
+                    let SD_area_list = SD_area_for_variances_sq.get(rounded_variance)
+                    SD_area_list.push(mean_area_error / seen)
+                    SD_area_for_variances_sq.set(rounded_variance, SD_area_list)
+                } else 
+                    SD_area_for_variances_sq.set(rounded_variance, [mean_area_error / seen])
+
+                // SD for the weighted area
+                if (SD_weighted_area_for_variances_sq.get(rounded_variance)) {
+                    let SD_weighted_area_list = SD_weighted_area_for_variances_sq.get(rounded_variance)
+                    SD_weighted_area_list.push(weighted_mean_area_error / total_wanted_value)
+                    SD_weighted_area_for_variances_sq.set(rounded_variance, SD_weighted_area_list)
+                } else 
+                    SD_weighted_area_for_variances_sq.set(rounded_variance, [weighted_mean_area_error / total_wanted_value])
+
+                // SD for the estimation
+                if (SD_estimation_for_variances_sq.get(rounded_variance)) {
+                    let SD_estimation_list = SD_estimation_for_variances_sq.get(rounded_variance)
+                    SD_estimation_list.push(estimations_error_size / estimations_made)
+                    SD_estimation_for_variances_sq.set(rounded_variance, SD_estimation_list)
+                } else 
+                    SD_estimation_for_variances_sq.set(rounded_variance, [estimations_error_size / estimations_made])
+
+                // SD for the weighted estimation
+                if (SD_weighted_estimation_for_variances_sq.get(rounded_variance)) {
+                    let SD_weighted_estimation_list = SD_weighted_estimation_for_variances_sq.get(rounded_variance)
+                    SD_weighted_estimation_list.push(weighted_estimations_error_size / estimations_made)
+                    SD_estimation_for_variances_sq.set(rounded_variance, SD_weighted_estimation_list)
+                } else 
+                    SD_weighted_estimation_for_variances_sq.set(rounded_variance, [weighted_estimations_error_size / estimations_made])
 
                 console.log(`\n********** PRINTING STATS FOR THE PROGRESSIVE SQUARIFIED TECHNIQUE **********`)
                 for (let [key, value] of amounts_of_variances_sq) {
+                    
+                    let mean_ar = mean_ar_for_variances_sq.get(key) / value
+                    let sd_ar = SD_ar_for_variances_sq.get(key).reduce((sum, ar) => { return sum + (ar - mean_ar) ** 2 }, 0) / value;
+                    sd_ar = Math.sqrt(sd_ar)
+
+                    let mean_weighted_ar = weighted_mean_ar_for_variances_sq.get(key) / value
+                    let sd_weighted_ar = SD_weighted_ar_for_variances_sq.get(key).reduce((sum, weighted_ar) => { return sum + (weighted_ar - mean_weighted_ar) ** 2 }, 0) / value;
+                    sd_weighted_ar = Math.sqrt(sd_weighted_ar)
+
+                    let mean_area = mean_area_error_for_variances_sq.get(key) / value
+                    let sd_area = SD_area_for_variances_sq.get(key).reduce((sum, area) => { return sum + (area - mean_area) ** 2 }, 0) / value;
+                    sd_area = Math.sqrt(sd_area)
+
+                    let mean_weighted_area = weighted_mean_area_error_for_variances_sq.get(key) / value
+                    let sd_weighted_area = SD_weighted_area_for_variances_sq.get(key).reduce((sum, weighted_area) => { return sum + (weighted_area - mean_weighted_area) ** 2 }, 0) / value;
+                    sd_weighted_area = Math.sqrt(sd_weighted_area)
+
+                    let mean_estimation = mean_estimation_error_for_variances_sq.get(key) / value
+                    let sd_estimation = SD_estimation_for_variances_sq.get(key).reduce((sum, estimation) => { return sum + (estimation - mean_estimation) ** 2 }, 0) / value;
+                    sd_estimation = Math.sqrt(sd_estimation)
+
+                    let mean_weighted_estimation = weighted_mean_estimation_error_for_variances_sq.get(key) / value
+                    let sd_weighted_estimation = SD_estimation_for_variances_sq.get(key).reduce((sum, weighted_estimation) => { return sum + (weighted_estimation - mean_weighted_estimation) ** 2 }, 0) / value;
+                    sd_weighted_estimation = Math.sqrt(sd_weighted_estimation)
+                    
                     console.log("variance:", key, "amount:", value)
-                    console.log("mean area error for variance: " + key + " is " + mean_area_error_for_variances_sq.get(key) / value);
-                    console.log("mean weighted area error for variance: " + key + " is " + weighted_mean_area_error_for_variances_sq.get(key) / value);
-                    console.log("mean estimation error for variance: " + key + " is " + mean_estimation_error_for_variances_sq.get(key) / value);
-                    console.log("mean weighted estimation error for variance: " + key + " is " + weighted_mean_estimation_error_for_variances_sq.get(key) / value)
-                    console.log("mean AR for variance: " + key + " is " + mean_ar_for_variances_sq.get(key) / value);
-                    console.log("mean weighted AR for variance: " + key + " is " + weighted_mean_ar_for_variances_sq.get(key) / value);
+                    
+                    console.log("mean area error for variance: " + key + " is " + mean_area);
+                    console.log("mean weighted area error for variance: " + key + " is " + mean_weighted_area);
+                    console.log("standard deviation for area for variance: " + key + " is " + sd_area)
+                    console.log("standard deviation for weighted area for variance: " + key + " is " + sd_weighted_area)
+
+                    console.log("mean estimation error for variance: " + key + " is " + mean_estimation);
+                    console.log("mean weighted estimation error for variance: " + key + " is " + mean_weighted_estimation)
+                    console.log("standard deviation for estimation error for variance: " + key + " is " + sd_estimation)
+                    console.log("standard deviation for weighted estimation error for variance: " + key + " is " + sd_weighted_estimation)
+                    
+
+                    console.log("mean AR for variance: " + key + " is " + mean_ar);
+                    console.log("mean weighted AR for variance: " + key + " is " + mean_weighted_ar);
+                    console.log("standard deviation for AR for variance: " + key + " is " + sd_ar)
+                    console.log("standard deviation for weighted AR for variance: " + key + " is " + sd_weighted_ar)
                 }
 
             } else {
