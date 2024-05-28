@@ -1,5 +1,6 @@
-🌳
+Code related to a bachelor’s thesis on the possibility of applying progressive visualization to unordered hierarchical data sets.
 
-![sunburst_vis](https://github.com/mR4smussen/bachelorproject-UBI-2024/assets/101742082/e8080782-ae88-4cd3-bbd4-68bd0b5ae622)
+https://github.com/mR4smussen/bachelorproject-UBI-2024/assets/101742082/492e4425-362a-4bf1-9232-ec47ed21b0f0
 
-![tree_map_mix_small](https://github.com/mR4smussen/bachelorproject-UBI-2024/assets/101742082/c34d985d-096a-4035-88fa-e1ba48e3538e)
+https://github.com/mR4smussen/bachelorproject-UBI-2024/assets/101742082/15b3ecba-7d47-45a8-b726-a930b6726152
+
