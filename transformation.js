@@ -2,45 +2,55 @@ const fs = require("fs");
 
 let ROOT_INTERVAL_SIZE = 0;
 
+let TOTAL_LAYERS = 120; // maybe this should not be hardcoded...
+// TOTAL_LAYERS = 3; // maybe this should not be hardcoded...
+let nodes_in_layers = Array(TOTAL_LAYERS + 1).fill(0)
+
 class TreeNode {
   constructor() {
     this.children = [];
     this.interval = null;
     this.depth = null;
     this.branchNr = null;
+    this.isLeaf = false
   }
 
   assignIntervals(start = 0, depth = 1, branchNr = null) {
+    nodes_in_layers[depth] += 1
     this.depth = depth;
-
     this.branchNr = branchNr;
-
+      
     if (this.children.length === 0) {
-      // Leaf node, assign range [start, start+1]
       this.interval = [start, start + 1];
-      return this.interval;
+      this.isLeaf = true
+      return start+1;
     } else {
       // Non-leaf node, assign range [min of child, max of child]
       let currentEnd = start;
-      this.children.forEach((child, index) => {
-        const childBranchNr = Math.floor(Math.random() * 10); // this assigns a random color shared by siblings
-        currentEnd = child.assignIntervals(currentEnd, depth + 1,childBranchNr)[1];
+      this.children.forEach((child) => {
+        let childBranchNr = branchNr
+        if (this.depth % 5 == 0 || branchNr == null) {
+          childBranchNr = Math.floor(Math.random() * 10);
+        }
+        // const childBranchNr = Math.floor(Math.random() * 10); // this assigns a random color shared by siblings
+        currentEnd = child.assignIntervals(currentEnd, depth + 1,childBranchNr);
       });
       this.interval = [start, currentEnd];
-      return [start, currentEnd];
+      return currentEnd;
     }
   }
 
   // defined the intervals as their fraction of the roots interval
-  fractionize_interval() {
+  fractionize_interval(parent_interval) {
     const current_start = this.interval[0];
     const current_end = this.interval[1];
     this.interval = [
       current_start / ROOT_INTERVAL_SIZE,
       current_end / ROOT_INTERVAL_SIZE,
     ];
+    this.parent_interval = parent_interval
     this.children.forEach((child) => {
-      child.fractionize_interval();
+      child.fractionize_interval(this.interval);
     });
   }
 }
@@ -56,6 +66,8 @@ class Tree {
     connections.forEach(({ source, target }) => {
       if (!nodes[source]) {
         nodes[source] = new TreeNode(source);
+        if (source == 1)
+          this.root = nodes[source]
       }
 
       if (!nodes[target]) {
@@ -65,16 +77,6 @@ class Tree {
       nodes[source].children.push(nodes[target]);
     });
 
-    // the node which is not the child of another node is the root
-    const rootCandidates = Object.values(nodes).filter(
-      (node) => !Object.values(nodes).some((n) => n.children.includes(node))
-    );
-    if (rootCandidates.length === 1) {
-      this.root = rootCandidates[0];
-      return this.root;
-    } else {
-      throw new Error("The tree should have exactly one root.");
-    }
   }
 }
 
@@ -118,12 +120,8 @@ extractLinksFromJsonFile(filePath)
 
     // Printing the nodes to a file
     function printInfoToFile(node, filename) {
-      data = "";
-      if (node.depth === 1) {
-        data = `{"status":"root","interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr}}\n`;
-      } else {
-        data = `{"interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"colorNr":${node.branchNr}}\n`;
-      }
+      random_layer = Math.floor(Math.random() * TOTAL_LAYERS) + 1;
+      data = `{"interval":[${node.interval[0]},${node.interval[1]}],"depth":${node.depth},"nodes_in_own_layer":${nodes_in_layers[node.depth]},"random_layer":${random_layer},"nodes_in_random_layer":${nodes_in_layers[random_layer]},"total_layers":${TOTAL_LAYERS},"colorNr":${node.branchNr},"isLeaf": ${node.isLeaf}}\n`
 
       fs.appendFileSync(filename, data);
 

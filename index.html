@@ -5,13 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sunburst Diagram</title>
   <style>
-    canvas {
-      border: 1px solid #000;
+    .canvas-container {
+      display: inline-block;
+      margin: 10px; 
     }
+
+    canvas {
+        margin: 0px;
+        background-color: #dbdbdb;
+    }
+
+    form {
+      margin-bottom: 10px;
+    }
+
+    #layout_type {
+      border-radius: 5%;
+      width: 500px;
+      height: 100px;
+      font-size: 80px;
+    }
+
+    #draw_button{
+      background-color: green;
+      border-radius: 5%;
+      width: 250px;
+      height: 100px;
+      font-size: 80px;
+    }
+
+    .number_input{
+      margin-left: 10px;
+      border-radius: 5%;
+      height: 45px;
+      width: 250px;
+      font-size: 20px;
+    }
+
+    #nodes_to_see_input {
+      margin-left: 10px;
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .checkbox {
+      margin-left: 20px;
+      height: 45px;
+      width: 45px;
+    }
+
   </style>
 </head>
 <body>
-  <canvas id="sunburstCanvas" width="6500" height="6000"></canvas>
+
+  <form style="display: flex;">
+    <button id="draw_button">
+      Draw
+    </button>
+    <select id="layout_type" name="layout_type" >
+      <option value="" disabled selected hidden>Pick Layout</option>
+      <option value="Sunburst">Sunburst</option>
+      <option value="Icicle">Icicle</option>
+      <option value="Slice and Dice">Slice & Dice</option>
+      <option value="Squarified">Squarified</option>
+      <option value="Evaluate">Evaluate</option>
+    </select>
+    <div id="nodes_to_see_input">
+      <input type="number" class="number_input" name="guarantee_perc" placeholder="Guarantee in %">
+      <input type="number" class="number_input" name="guarantee_num" placeholder="Nodes to wait for">
+    </div>
+  </form>
+
+  <canvas id="sunburstCanvas" width="2000" height="2000"></canvas>
+  <script src="sunburst.js"></script>
+  <script src="tree_map_parent_approx.js"></script>
+  <script src="tree_map_bookshelves.js"></script>
+  <script src="tree_map_mix.js"></script>
+  <script src="tree_map_squarified.js"></script>
+  <script src="icicle.js"></script>
   <script src="visualization.js"></script>
+  <script src="stream_data.js"></script>
+  <script src="utils.js"></script>
+  <script src="non_pv_squarified.js"></script>
+  <script src="tree_generator.js"></script>
 </body>
 </html>
